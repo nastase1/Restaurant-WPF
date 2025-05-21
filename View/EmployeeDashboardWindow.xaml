@@ -1,0 +1,396 @@
+﻿<Window x:Class="Restaurant.View.EmployeeDashboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Restaurant.ViewModels"
+        xmlns:conv="clr-namespace:Restaurant.Converters"
+        mc:Ignorable="d"
+        Title="Panou Administrare Angajat" Height="800" Width="1280"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
+        Background="#FFF0F2F5">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#FF007ACC"/>
+        <SolidColorBrush x:Key="LightGrayBrush" Color="#FFCCCCCC"/>
+        <SolidColorBrush x:Key="DarkGrayBrush" Color="#FF555555"/>
+        <SolidColorBrush x:Key="BackgroundBrush" Color="#FFF0F2F5"/>
+        <SolidColorBrush x:Key="LightTextBrush" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="DarkTextBrush" Color="#FF333333"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#FFD0D0D0"/>
+        <SolidColorBrush x:Key="PositiveActionBrush" Color="#FF28A745"/>
+        <SolidColorBrush x:Key="NegativeActionBrush" Color="#FFDC3545"/>
+        <SolidColorBrush x:Key="PositiveActionHoverBrush" Color="#FF1E7E34"/>
+        <SolidColorBrush x:Key="NegativeActionHoverBrush" Color="#FFA82734"/>
+        <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#FF005A9E"/>
+        <Style TargetType="Control">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkTextBrush}"/>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkTextBrush}"/>
+        </Style>
+        <Style TargetType="Button" x:Key="BaseButtonStyle">
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimaryHoverBrush}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.6"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}"/>
+        <Style TargetType="Button" x:Key="DeleteButtonStyle" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource NegativeActionBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource NegativeActionHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="Button" x:Key="PositiveButtonStyle" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource PositiveActionBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PositiveActionHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="DataGrid">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="VerticalGridLinesBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#FFEFEFEF"/>
+            <Setter Property="ColumnHeaderStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Padding" Value="8,5"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="CellStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Padding" Value="8,5"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="DataGridCell">
+                                    <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}">
+                                        <ContentPresenter VerticalAlignment="Center" />
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#FFDCEBFA"/>
+                                <Setter Property="Foreground" Value="{StaticResource DarkTextBrush}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="StackPanel" x:Key="ActionButtonsPanel">
+            <Setter Property="Orientation" Value="Horizontal"/>
+            <Setter Property="Margin" Value="5,5,5,10"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
+            <Setter Property="Background" Value="{StaticResource LightGrayBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkTextBrush}"/>
+            <Setter Property="BorderThickness" Value="1,1,1,0"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Name="Border" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}" CornerRadius="4,4,0,0" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="White"/>
+                                <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#FFEEEEEE"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="GroupBox">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{StaticResource BackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="White" Padding="15" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding WelcomeMessage}" FontSize="22" FontWeight="Light" VerticalAlignment="Center" Foreground="{StaticResource DarkTextBrush}"/>
+                <Button Grid.Column="1" Content="Reîncarcă Datele" Command="{Binding LoadDataCommand}" Width="100" Height="19" Margin="30,0,0,0" VerticalAlignment="Center" Style="{StaticResource BaseButtonStyle}"/>
+                <Button Grid.Column="3" Command="{Binding LogoutCommand}" Content="Delogare" Style="{StaticResource DeleteButtonStyle}" Width="70" Height="19" Padding="12,8" VerticalAlignment="Center" ToolTip="Închide sesiunea și revino la ecranul de autentificare."/>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" Margin="10">
+            <TabItem Header="Gestionare Preparate">
+                <Grid Background="White" Margin="0,5,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Style="{StaticResource ActionButtonsPanel}">
+                        <Button Content="Adaugă Preparat" Command="{Binding AddProductCommand}" Style="{StaticResource PositiveButtonStyle}" ToolTip="Adaugă un preparat nou." Width="100" Height="19"/>
+                        <Button Content="Modifică Preparat" Command="{Binding EditProductCommand}" CommandParameter="{Binding SelectedPreparat}" ToolTip="Modifică preparatul selectat." Width="110"/>
+                        <Button Content="Șterge Preparat" Command="{Binding DeleteProductCommand}" CommandParameter="{Binding SelectedPreparat}" Style="{StaticResource DeleteButtonStyle}" Width="100"/>
+                    </StackPanel>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Preparate}" SelectedItem="{Binding SelectedPreparat}" CanUserSortColumns="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Denumire" Binding="{Binding Denumire}" Width="2*"/>
+                            <DataGridTextColumn Header="Preț" Binding="{Binding Pret, StringFormat=C}" Width="Auto"/>
+                            <DataGridTextColumn Header="Gramaj Porție" Binding="{Binding CantitatePortie, StringFormat={}{0:N2}g}" Width="Auto"/>
+                            <DataGridTextColumn Header="Stoc Total" Binding="{Binding CantitateTotala, StringFormat={}{0:N3}g}" Width="Auto"/>
+                            <DataGridTextColumn Header="Categorie" Binding="{Binding Categorie.Denumire}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Gestionare Meniuri">
+                <Grid Background="White" Margin="0,5,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Style="{StaticResource ActionButtonsPanel}">
+                        <Button Content="Adaugă Meniu" Command="{Binding AddMenuCommand}" Style="{StaticResource PositiveButtonStyle}" ToolTip="Adaugă un meniu nou." Width="100" Height="19"/>
+                        <Button Content="Modifică Meniu" Command="{Binding EditMenuCommand}" CommandParameter="{Binding SelectedMeniu}" ToolTip="Modifică meniul selectat." Width="100" Height="19"/>
+                        <Button Content="Șterge Meniu" Command="{Binding DeleteMenuCommand}" CommandParameter="{Binding SelectedMeniu}" Style="{StaticResource DeleteButtonStyle}" Width="100" Height="19"/>
+                    </StackPanel>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Meniuri}" SelectedItem="{Binding SelectedMeniu}" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Denumire" Binding="{Binding Denumire}" Width="2*"/>
+                            <DataGridTextColumn Header="Descriere" Binding="{Binding Descriere}" Width="2*"/>
+                            <DataGridTextColumn Header="Categorie" Binding="{Binding Categorie.Denumire}" Width="*"/>
+                            <DataGridTextColumn Header="Discount" Binding="{Binding DiscountProcent, StringFormat={}{0:N2}%}" Width="Auto"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Gestionare Categorii">
+                <Grid Background="White" Margin="0,5,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Style="{StaticResource ActionButtonsPanel}">
+                        <Button Content="Adaugă Categorie" Command="{Binding AddCategoryCommand}" Style="{StaticResource PositiveButtonStyle}" Width="110" Height="19"/>
+                        <Button Content="Șterge Categorie" Command="{Binding DeleteCategoryCommand}" CommandParameter="{Binding SelectedCategorie}" Style="{StaticResource DeleteButtonStyle}" Width="110" Height="19"/>
+                    </StackPanel>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Categorii}" SelectedItem="{Binding SelectedCategorie}" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Denumire" Binding="{Binding Denumire}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Gestionare Alergeni">
+                <Grid Background="White" Margin="0,5,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Style="{StaticResource ActionButtonsPanel}">
+                        <Button Content="Adaugă Alergen" Command="{Binding AddAllergenCommand}" Style="{StaticResource PositiveButtonStyle}" Width="100" Height="19"/>
+                        <Button Content="Șterge Alergen" Command="{Binding DeleteAllergenCommand}" CommandParameter="{Binding SelectedAlergen}" Style="{StaticResource DeleteButtonStyle}" Width="100" Height="19"/>
+                    </StackPanel>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Alergeni}" SelectedItem="{Binding SelectedAlergen}" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Denumire" Binding="{Binding Denumire}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Gestionare Comenzi">
+                <Grid Background="White" Margin="0,5,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <GroupBox Header="Comenzi Active" Grid.Row="0">
+                        <DataGrid ItemsSource="{Binding ComenziActive}" SelectedItem="{Binding SelectedComanda}" SelectionMode="Single" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Cod" Binding="{Binding CodComanda}" Width="Auto"/>
+                                <DataGridTextColumn Header="Data" Binding="{Binding DataComanda, StringFormat='dd/MM/yy HH:mm'}" Width="Auto"/>
+                                <DataGridTextColumn Header="Client" Binding="{Binding NumeClient}" Width="*"/>
+                                <DataGridTextColumn Header="Total" Binding="{Binding CostTotal, StringFormat=C}" Width="Auto"/>
+                                <DataGridTextColumn Header="Stare" Binding="{Binding Stare}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                    <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Background="{StaticResource BackgroundBrush}" ShowsPreview="True"/>
+                    <GroupBox Header="Istoric Comenzi (Toate)" Grid.Row="2">
+                        <DataGrid ItemsSource="{Binding ToateComenzile}" SelectedItem="{Binding SelectedComanda}" SelectionMode="Single" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Cod" Binding="{Binding CodComanda}" Width="Auto"/>
+                                <DataGridTextColumn Header="Data" Binding="{Binding DataComanda, StringFormat='dd/MM/yy HH:mm'}" Width="Auto"/>
+                                <DataGridTextColumn Header="Client" Binding="{Binding NumeClient}" Width="*"/>
+                                <DataGridTextColumn Header="Total" Binding="{Binding CostTotal, StringFormat=C}" Width="Auto"/>
+                                <DataGridTextColumn Header="Stare" Binding="{Binding Stare}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                    <Border Grid.Row="3" Padding="10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Margin="5">
+                        <StackPanel DataContext="{Binding SelectedComanda}" IsEnabled="{Binding IsOrderSelected}">
+                            <TextBlock Text="Detalii Comandă Selectată:" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="{StaticResource PrimaryBrush}"/>
+                            <Grid Visibility="{Binding IsOrderSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Client: " FontWeight="SemiBold" Margin="0,0,10,5"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding NumeClient}" Margin="0,0,0,5"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Telefon: " FontWeight="SemiBold" Margin="0,0,10,5"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TelefonClient}" Margin="0,0,0,5"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Adresă: " FontWeight="SemiBold" Margin="0,0,10,5"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AdresaLivrareClient}" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Produse: " FontWeight="SemiBold" VerticalAlignment="Top" Margin="0,0,10,5"/>
+                                <ItemsControl Grid.Row="3" Grid.Column="1" ItemsSource="{Binding ProduseComandate}" MaxHeight="100" Margin="0,0,0,5" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Margin="0,0,0,2"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Stare Actuală: " FontWeight="SemiBold" Margin="0,5,10,5"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Stare}" Margin="0,5,0,5" FontWeight="Bold"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0" Visibility="{Binding CanChangeStatus, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="Schimbă Starea în:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <ComboBox ItemsSource="{Binding DataContext.AvailableOrderStates, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" SelectedItem="{Binding DataContext.NewOrderStatus, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}" MinWidth="180" VerticalAlignment="Center" Padding="5"/>
+                                <Button Content="Actualizează Starea" VerticalAlignment="Center" MinWidth="150" Command="{Binding DataContext.ChangeOrderStatusCommand, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource PositiveButtonStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Stocuri Critice">
+                <Grid Background="White" Margin="0,5,0,0">
+                    <DataGrid ItemsSource="{Binding ProduseStocRedus}" IsReadOnly="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Nume Preparat" Binding="{Binding NumePreparat}" Width="*"/>
+                            <DataGridTextColumn Header="Stoc Rămas (g)" Binding="{Binding DisplayStoc}" Width="Auto" FontWeight="Bold"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Popup Placement="Center" AllowsTransparency="True" PopupAnimation="Fade"
+               IsOpen="{Binding IsAddEditPopupOpen, Mode=TwoWay}"
+               StaysOpen="False" MaxHeight="220" MaxWidth="450" MinWidth="380">
+            <Border Background="White" BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="2" CornerRadius="8" Padding="25">
+                <Border.Effect>
+                    <DropShadowEffect Color="Gray" ShadowDepth="4" BlurRadius="10" Opacity="0.6"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="{Binding PopupTitle}" FontSize="18" FontWeight="SemiBold" 
+                               Foreground="{StaticResource PrimaryBrush}" Margin="0,0,0,20" 
+                               HorizontalAlignment="Center"/>
+
+                    <TextBlock Text="Denumire:" Margin="0,0,0,5" Foreground="{StaticResource DarkTextBrush}"/>
+                    <TextBox Text="{Binding NewItemName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                             Padding="7" Margin="0,0,0,25" 
+                             BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                             Height="34" VerticalContentAlignment="Center" MinWidth="300"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <Button Content="Salvează" Command="{Binding SaveNewItemCommand}" 
+                                Style="{StaticResource PositiveButtonStyle}" MinWidth="90" Height="35"/>
+                        <Button Content="Anulează" Command="{Binding CancelPopupCommand}" 
+                                Style="{StaticResource BaseButtonStyle}" Background="{StaticResource DarkGrayBrush}" 
+                                MinWidth="90" Height="35"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</Window>
