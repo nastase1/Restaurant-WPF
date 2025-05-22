@@ -13,6 +13,8 @@
 
     <Window.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <conv:CrudOperationToVisibilityConverter x:Key="CrudOpToVisibilityConverter"/>
+        
         <SolidColorBrush x:Key="PrimaryBrush" Color="#FF007ACC"/>
         <SolidColorBrush x:Key="LightGrayBrush" Color="#FFCCCCCC"/>
         <SolidColorBrush x:Key="DarkGrayBrush" Color="#FF555555"/>
@@ -175,6 +177,27 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style TargetType="TextBlock" x:Key="PopupLabelStyle">
+            <Setter Property="Margin" Value="0,0,0,3"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkTextBrush}"/>
+        </Style>
+        <Style TargetType="TextBox" x:Key="PopupTextBoxStyle">
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style TargetType="ComboBox" x:Key="PopupComboBoxStyle">
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
     </Window.Resources>
 
     <Grid Background="{StaticResource BackgroundBrush}">
@@ -235,7 +258,13 @@
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Meniuri}" SelectedItem="{Binding SelectedMeniu}" SelectionMode="Single">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Denumire" Binding="{Binding Denumire}" Width="2*"/>
-                            <DataGridTextColumn Header="Descriere" Binding="{Binding Descriere}" Width="2*"/>
+                            <DataGridTemplateColumn Header="Descriere" Width="2*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Descriere}" TextWrapping="Wrap" VerticalAlignment="Center" Padding="4,2"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Categorie" Binding="{Binding Categorie.Denumire}" Width="*"/>
                             <DataGridTextColumn Header="Discount" Binding="{Binding DiscountProcent, StringFormat={}{0:N2}%}" Width="Auto"/>
                         </DataGrid.Columns>
@@ -251,6 +280,7 @@
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Style="{StaticResource ActionButtonsPanel}">
                         <Button Content="Adaugă Categorie" Command="{Binding AddCategoryCommand}" Style="{StaticResource PositiveButtonStyle}" Width="110" Height="19"/>
+                        <Button Content="Modifică Categorie" Command="{Binding EditCategoryCommand}" CommandParameter="{Binding SelectedCategorie}" Width="110" Height="19"/>
                         <Button Content="Șterge Categorie" Command="{Binding DeleteCategoryCommand}" CommandParameter="{Binding SelectedCategorie}" Style="{StaticResource DeleteButtonStyle}" Width="110" Height="19"/>
                     </StackPanel>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Categorii}" SelectedItem="{Binding SelectedCategorie}" SelectionMode="Single">
@@ -269,6 +299,7 @@
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Style="{StaticResource ActionButtonsPanel}">
                         <Button Content="Adaugă Alergen" Command="{Binding AddAllergenCommand}" Style="{StaticResource PositiveButtonStyle}" Width="100" Height="19"/>
+                        <Button Content="Modifică Alergen" Command="{Binding EditAllergenCommand}" CommandParameter="{Binding SelectedAlergen}" Width="100" Height="19"/>
                         <Button Content="Șterge Alergen" Command="{Binding DeleteAllergenCommand}" CommandParameter="{Binding SelectedAlergen}" Style="{StaticResource DeleteButtonStyle}" Width="100" Height="19"/>
                     </StackPanel>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Alergeni}" SelectedItem="{Binding SelectedAlergen}" SelectionMode="Single">
@@ -366,30 +397,112 @@
 
         <Popup Placement="Center" AllowsTransparency="True" PopupAnimation="Fade"
                IsOpen="{Binding IsAddEditPopupOpen, Mode=TwoWay}"
-               StaysOpen="False" MaxHeight="220" MaxWidth="450" MinWidth="380">
-            <Border Background="White" BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="2" CornerRadius="8" Padding="25">
+               StaysOpen="False" MaxWidth="600" MaxHeight="700">
+            <Border Background="WhiteSmoke" BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="2" CornerRadius="8" Padding="15">
                 <Border.Effect>
                     <DropShadowEffect Color="Gray" ShadowDepth="4" BlurRadius="10" Opacity="0.6"/>
                 </Border.Effect>
-                <StackPanel>
-                    <TextBlock Text="{Binding PopupTitle}" FontSize="18" FontWeight="SemiBold" 
-                               Foreground="{StaticResource PrimaryBrush}" Margin="0,0,0,20" 
-                               HorizontalAlignment="Center"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel MinWidth="450">
+                        <TextBlock Text="{Binding PopupTitle}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}" Margin="0,0,0,15" HorizontalAlignment="Center"/>
 
-                    <TextBlock Text="Denumire:" Margin="0,0,0,5" Foreground="{StaticResource DarkTextBrush}"/>
-                    <TextBox Text="{Binding NewItemName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
-                             Padding="7" Margin="0,0,0,25" 
-                             BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                             Height="34" VerticalContentAlignment="Center" MinWidth="300"/>
+                        <StackPanel Visibility="{Binding CurrentPopupOperation, Converter={StaticResource CrudOpToVisibilityConverter}, ConverterParameter=AddCategory|EditCategory|AddAllergen|EditAllergen}">
+                            <TextBlock Text="Denumire:" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding SimpleEntryName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Style="{StaticResource PopupTextBoxStyle}"/>
+                        </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                        <Button Content="Salvează" Command="{Binding SaveNewItemCommand}" 
-                                Style="{StaticResource PositiveButtonStyle}" MinWidth="90" Height="35"/>
-                        <Button Content="Anulează" Command="{Binding CancelPopupCommand}" 
-                                Style="{StaticResource BaseButtonStyle}" Background="{StaticResource DarkGrayBrush}" 
-                                MinWidth="90" Height="35"/>
+                        <StackPanel DataContext="{Binding EditingPreparat}" Visibility="{Binding DataContext.CurrentPopupOperation, RelativeSource={RelativeSource AncestorType={x:Type Popup}}, Converter={StaticResource CrudOpToVisibilityConverter}, ConverterParameter=AddProduct|EditProduct}">
+                            <TextBlock Text="Denumire Preparat:" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding Denumire, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PopupTextBoxStyle}"/>
+
+                            <TextBlock Text="Preț:" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding Pret, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Style="{StaticResource PopupTextBoxStyle}"/>
+
+                            <TextBlock Text="Cantitate Porție (grame/ml):" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding CantitatePortie, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Style="{StaticResource PopupTextBoxStyle}"/>
+
+                            <TextBlock Text="Stoc Total (grame/ml):" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding CantitateTotala, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}" Style="{StaticResource PopupTextBoxStyle}"/>
+
+                            <TextBlock Text="Categorie:" Style="{StaticResource PopupLabelStyle}"/>
+                            <ComboBox ItemsSource="{Binding DataContext.AllCategoriesForForms, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
+                                      SelectedItem="{Binding Categorie, Mode=TwoWay}" 
+                                      DisplayMemberPath="Denumire" 
+                                      SelectedValuePath="CategorieID" 
+                                      SelectedValue="{Binding CategorieID, Mode=TwoWay}"
+                                      Style="{StaticResource PopupComboBoxStyle}"/>
+
+                            <TextBlock Text="Cale Imagine (opțional):" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding ListaFotografii, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PopupTextBoxStyle}"/>
+
+                            <TextBlock Text="Alergeni:" Margin="0,10,0,5" Style="{StaticResource PopupLabelStyle}"/>
+                            <Border BorderBrush="LightGray" BorderThickness="1" MaxHeight="120" MinHeight="60" Margin="0,0,0,10">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding DataContext.AllergensForProductForm, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Content="{Binding Denumire}" IsChecked="{Binding IsSelected}" Margin="3,2"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel DataContext="{Binding EditingMeniu}" Visibility="{Binding DataContext.CurrentPopupOperation, RelativeSource={RelativeSource AncestorType={x:Type Popup}}, Converter={StaticResource CrudOpToVisibilityConverter}, ConverterParameter=AddMenu|EditMenu}">
+                            <TextBlock Text="Denumire Meniu:" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding Denumire, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PopupTextBoxStyle}"/>
+
+                            <TextBlock Text="Descriere:" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding Descriere, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" Style="{StaticResource PopupTextBoxStyle}" VerticalScrollBarVisibility="Auto"/>
+
+                            <TextBlock Text="Categorie:" Style="{StaticResource PopupLabelStyle}"/>
+                            <ComboBox ItemsSource="{Binding DataContext.AllCategoriesForForms, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
+                                      SelectedItem="{Binding Categorie, Mode=TwoWay}" 
+                                      DisplayMemberPath="Denumire" 
+                                      SelectedValuePath="CategorieID"
+                                      SelectedValue="{Binding CategorieID, Mode=TwoWay}"
+                                      Style="{StaticResource PopupComboBoxStyle}"/>
+
+                            <TextBlock Text="Discount (%):" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding DiscountProcent, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Style="{StaticResource PopupTextBoxStyle}"/>
+
+                            <TextBlock Text="Cale Imagine (opțional):" Style="{StaticResource PopupLabelStyle}"/>
+                            <TextBox Text="{Binding ListaFotografii, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PopupTextBoxStyle}"/>
+
+                            <TextBlock Text="Selectează Preparate (și cantitatea):" Margin="0,10,0,5" Style="{StaticResource PopupLabelStyle}"/>
+                            <Border BorderBrush="LightGray" BorderThickness="1" MaxHeight="150" MinHeight="80" Margin="0,0,0,10">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding DataContext.PreparateForMenuForm, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="2,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedInMenu}" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Denumire}" VerticalAlignment="Center" Margin="5,0" ToolTip="{Binding PretUnitar, StringFormat=C}"/>
+                                                    <TextBlock Grid.Column="2" Text="Cant:" VerticalAlignment="Center" Margin="10,0,3,0" Visibility="{Binding IsSelectedInMenu, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                    <TextBox Grid.Column="3" Text="{Binding CantitateInMeniu, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}" 
+                                                             MinWidth="50" VerticalAlignment="Center" HorizontalContentAlignment="Right" Padding="5,0"
+                                                             IsEnabled="{Binding IsSelectedInMenu}" Visibility="{Binding IsSelectedInMenu, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                            <Button Content="Salvează" Command="{Binding SaveCrudItemCommand}" Style="{StaticResource PositiveButtonStyle}" MinWidth="90" Height="35"/>
+                            <Button Content="Anulează" Command="{Binding CancelPopupCommand}" Style="{StaticResource BaseButtonStyle}" Background="{StaticResource DarkGrayBrush}" MinWidth="90" Height="35"/>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </ScrollViewer>
             </Border>
         </Popup>
     </Grid>

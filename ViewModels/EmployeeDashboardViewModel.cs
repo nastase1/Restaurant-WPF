@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -23,9 +24,10 @@ namespace Restaurant.ViewModels
     public enum CrudPopupOperationType
     {
         None,
-        AddCategory,
-        AddAllergen,
-        // TODO: AddProduct, AddMenu (acestea vor necesita popup-uri/viewmodel-uri mai complexe)
+        AddCategory, EditCategory, // Vom implementa și Edit simplu
+        AddAllergen, EditAllergen, // Vom implementa și Edit simplu
+        AddProduct, EditProduct,
+        AddMenu, EditMenu
     }
 
     public class ScalarIntResult
@@ -72,15 +74,33 @@ namespace Restaurant.ViewModels
         private string _newItemName;
         public string NewItemName { get => _newItemName; set { _newItemName = value; OnPropertyChanged(); (SaveNewItemCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
         private CrudPopupOperationType _currentPopupOperation;
+        public CrudPopupOperationType CurrentPopupOperation { get => _currentPopupOperation; set { _currentPopupOperation = value; OnPropertyChanged(); } }
+
+        private string _simpleEntryName;
+        public string SimpleEntryName { get => _simpleEntryName; set { _simpleEntryName = value; OnPropertyChanged(); (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
+
+        private Preparat _editingPreparat = new Preparat(); // Inițializează pentru a evita null la binding
+        public Preparat EditingPreparat { get => _editingPreparat; set { _editingPreparat = value; OnPropertyChanged(); (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
+        public ObservableCollection<Categorie> AllCategoriesForForms { get; } = new ObservableCollection<Categorie>();
+        public ObservableCollection<AllergenSelectionViewModel> AllergensForProductForm { get; } = new ObservableCollection<AllergenSelectionViewModel>();
+
+        private Meniu _editingMeniu = new Meniu(); // Inițializează
+        public Meniu EditingMeniu { get => _editingMeniu; set { _editingMeniu = value; OnPropertyChanged(); (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
+        public ObservableCollection<PreparatSelectionViewModel> PreparateForMenuForm { get; } = new ObservableCollection<PreparatSelectionViewModel>();
+
+
 
         public ICommand LoadDataCommand { get; }
         public ICommand ChangeOrderStatusCommand { get; }
+        public ICommand SaveCrudItemCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand SaveNewItemCommand { get; }
         public ICommand CancelPopupCommand { get; }
         public ICommand AddCategoryCommand { get; }
+        public ICommand EditCategoryCommand { get; }
         public ICommand DeleteCategoryCommand { get; }
         public ICommand AddAllergenCommand { get; }
+        public ICommand EditAllergenCommand { get; }
         public ICommand DeleteAllergenCommand { get; }
         public ICommand AddProductCommand { get; }
         public ICommand EditProductCommand { get; }
@@ -104,48 +124,452 @@ namespace Restaurant.ViewModels
             }
             else { WelcomeMessage = "Bun venit, Angajat (Design Time)!"; }
 
-            LoadDataCommand = new RelayCommand(async _ => await LoadAllDataAsync());
             ChangeOrderStatusCommand = new RelayCommand(async _ => await ExecuteChangeOrderStatusAsync(), _ => CanExecuteChangeOrderStatus(_));
+            
+            LoadDataCommand = new RelayCommand(async _ => await LoadAllDataAsync());
             LogoutCommand = new RelayCommand(ExecuteLogout);
             SaveNewItemCommand = new RelayCommand(async _ => await ExecuteSaveNewItemAsync(), _ => CanExecuteSaveNewItem(_));
             CancelPopupCommand = new RelayCommand(ExecuteCancelPopup);
+            SaveCrudItemCommand = new RelayCommand(async _ => await ExecuteSaveCrudItemAsync(), _ => CanExecuteSaveCrudItem());
 
             AddCategoryCommand = new RelayCommand(ExecuteShowAddCategoryPopup);
+            EditCategoryCommand = new RelayCommand(ExecuteShowEditCategoryPopup, _ => SelectedCategorie != null);
             DeleteCategoryCommand = new RelayCommand(async _ => await ExecuteDeleteCategoryAsync(), _ => SelectedCategorie != null);
+
             AddAllergenCommand = new RelayCommand(ExecuteShowAddAllergenPopup);
+            EditAllergenCommand = new RelayCommand(ExecuteShowEditAllergenPopup, _ => SelectedAlergen != null);
             DeleteAllergenCommand = new RelayCommand(async _ => await ExecuteDeleteAllergenAsync(), _ => SelectedAlergen != null);
 
-            AddProductCommand = new RelayCommand(ShowNotImplementedProductMenuCrudMessage);
-            EditProductCommand = new RelayCommand(ShowNotImplementedProductMenuCrudMessage, _ => SelectedPreparat != null);
+            AddProductCommand = new RelayCommand(ExecuteShowAddProductPopup);
+            EditProductCommand = new RelayCommand(ExecuteShowEditProductPopup, _ => SelectedPreparat != null);
             DeleteProductCommand = new RelayCommand(async _ => await ExecuteDeleteProductAsync(), _ => SelectedPreparat != null);
 
-            AddMenuCommand = new RelayCommand(ShowNotImplementedProductMenuCrudMessage);
-            EditMenuCommand = new RelayCommand(ShowNotImplementedProductMenuCrudMessage, _ => SelectedMeniu != null);
+            AddMenuCommand = new RelayCommand(ExecuteShowAddMenuPopup);
+            EditMenuCommand = new RelayCommand(ExecuteShowEditMenuPopup, _ => SelectedMeniu != null);
             DeleteMenuCommand = new RelayCommand(async _ => await ExecuteDeleteMenuAsync(), _ => SelectedMeniu != null);
 
             if (!isInDesignTime) { Task.Run(async () => await LoadAllDataAsync()); }
         }
 
-        private void ShowNotImplementedProductMenuCrudMessage(object parameter)
+        private void UpdateCommandStates()
         {
-            MessageBox.Show("Funcționalitatea de Adăugare/Modificare pentru Preparate și Meniuri necesită formulare dedicate și va fi implementată ulterior.", "Funcționalitate Neimplementată", MessageBoxButton.OK, MessageBoxImage.Information);
+            (EditCategoryCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (DeleteCategoryCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (EditAllergenCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (DeleteAllergenCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (EditProductCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (DeleteProductCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (EditMenuCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (DeleteMenuCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
-        private void ExecuteShowAddCategoryPopup(object parameter)
+        private void ClearEditingState()
         {
-            _currentPopupOperation = CrudPopupOperationType.AddCategory;
-            PopupTitle = "Adaugă Categorie Nouă";
-            NewItemName = string.Empty;
+            SimpleEntryName = string.Empty;
+            EditingPreparat = new Preparat(); // Resetează la o instanță nouă
+            EditingMeniu = new Meniu();       // Resetează la o instanță nouă
+            AllCategoriesForForms.Clear();
+            AllergensForProductForm.Clear();
+            PreparateForMenuForm.Clear();
+        }
+
+        private void PrepareSimplePopup(string title, CrudPopupOperationType operation, string currentName = "")
+        {
+            ClearEditingState(); // Asigură-te că alte formulare sunt goale
+            CurrentPopupOperation = operation;
+            PopupTitle = title;
+            SimpleEntryName = currentName;
             IsAddEditPopupOpen = true;
         }
 
-        private void ExecuteShowAddAllergenPopup(object parameter)
+        
+
+        private void ExecuteShowAddCategoryPopup(object p) => PrepareSimplePopup("Adaugă Categorie", CrudPopupOperationType.AddCategory);
+        private void ExecuteShowEditCategoryPopup(object p)
         {
-            _currentPopupOperation = CrudPopupOperationType.AddAllergen;
-            PopupTitle = "Adaugă Alergen Nou";
-            NewItemName = string.Empty;
+            if (SelectedCategorie == null) return;
+            PrepareSimplePopup("Modifică Categorie", CrudPopupOperationType.EditCategory, SelectedCategorie.Denumire);
+        }
+
+        private void ExecuteShowAddAllergenPopup(object p) => PrepareSimplePopup("Adaugă Alergen", CrudPopupOperationType.AddAllergen);
+        private void ExecuteShowEditAllergenPopup(object p)
+        {
+            if (SelectedAlergen == null) return;
+            PrepareSimplePopup("Modifică Alergen", CrudPopupOperationType.EditAllergen, SelectedAlergen.Denumire);
+        }
+
+        private async Task PopulateProductFormCollections(Preparat forPreparat = null)
+        {
+            // Încarcă categorii dacă nu sunt deja încărcate
+            if (!AllCategoriesForForms.Any() || AllCategoriesForForms.Count != Categorii.Count) // Simplă verificare, poate fi îmbunătățită
+            {
+                var categories = await _db.Categorii.OrderBy(c => c.Denumire).ToListAsync();
+                Application.Current.Dispatcher.Invoke(() => {
+                    AllCategoriesForForms.Clear();
+                    foreach (var cat in categories) AllCategoriesForForms.Add(cat);
+                });
+            }
+
+            var allAlergensDb = await _db.Alergeni.OrderBy(a => a.Denumire).ToListAsync();
+            var selectedAllergenIds = new HashSet<int>();
+
+            if (forPreparat?.PreparatID > 0) // Dacă este în modul editare și preparatul are alergeni
+            {
+                // Asigură-te că AlergeniPreparate sunt încărcate pentru 'forPreparat'
+                // Acest lucru ar trebui făcut la încărcarea 'SelectedPreparat' înainte de a deschide popup-ul de editare
+                var preparatWithAllergens = await _db.Preparate
+                                .Include(p => p.AlergeniPreparate)
+                                .FirstOrDefaultAsync(p => p.PreparatID == forPreparat.PreparatID);
+                if (preparatWithAllergens?.AlergeniPreparate != null)
+                {
+                    selectedAllergenIds = preparatWithAllergens.AlergeniPreparate.Select(ap => ap.AlergenID).ToHashSet();
+                }
+            }
+
+            Application.Current.Dispatcher.Invoke(() => {
+                AllergensForProductForm.Clear();
+                foreach (var allergen in allAlergensDb)
+                {
+                    AllergensForProductForm.Add(new AllergenSelectionViewModel
+                    { AlergenID = allergen.AlergenID, Denumire = allergen.Denumire, IsSelected = selectedAllergenIds.Contains(allergen.AlergenID) });
+                }
+            });
+        }
+
+        private async Task PopulateMenuFormCollections(Meniu forMeniu = null)
+        {
+            if (_db == null)
+            {
+                // Afișează mesaj sau loghează dacă _db este null și nu suntem în design time
+                if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+                    MessageBox.Show("Conexiunea la baza de date nu este disponibilă pentru a încărca datele formularului de meniu.", "Eroare DB", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Încarcă Categorii (dacă nu sunt deja încărcate pentru formulare)
+            if (!AllCategoriesForForms.Any())
+            {
+                var categories = await _db.Categorii.OrderBy(c => c.Denumire).ToListAsync();
+                Application.Current.Dispatcher.Invoke(() => {
+                    AllCategoriesForForms.Clear();
+                    foreach (var cat in categories) AllCategoriesForForms.Add(cat);
+                });
+            }
+
+            // Încarcă toate Preparatele disponibile
+            var allPreparateDb = await _db.Preparate.OrderBy(p => p.Denumire).ToListAsync();
+            var selectedPreparatData = new Dictionary<int, decimal>(); // PreparatID -> Cantitate
+
+            if (forMeniu?.MeniuID > 0) // Dacă suntem în modul editare pentru un meniu existent
+            {
+                // Reîncarcă meniul cu preparatele asociate pentru a avea datele corecte
+                var meniuWithItems = await _db.Meniuri
+                                    .Include(m => m.MeniuPreparate)
+                                    .AsNoTracking() // Important pentru a evita conflicte de tracking
+                                    .FirstOrDefaultAsync(m => m.MeniuID == forMeniu.MeniuID);
+
+                if (meniuWithItems?.MeniuPreparate != null)
+                {
+                    foreach (var mp in meniuWithItems.MeniuPreparate)
+                    {
+                        selectedPreparatData[mp.PreparatID] = mp.Cantitate;
+                    }
+                }
+            }
+
+            Application.Current.Dispatcher.Invoke(() => {
+                PreparateForMenuForm.Clear();
+                foreach (var preparat in allPreparateDb)
+                {
+                    PreparateForMenuForm.Add(new PreparatSelectionViewModel(preparat)
+                    {
+                        IsSelectedInMenu = selectedPreparatData.ContainsKey(preparat.PreparatID),
+                        CantitateInMeniu = selectedPreparatData.TryGetValue(preparat.PreparatID, out var cant) ? cant : 1m // Setează cantitatea dacă există, altfel 1
+                    });
+                }
+            });
+        }
+
+        private async void ExecuteShowAddProductPopup(object parameter)
+        {
+            ClearEditingState();
+            CurrentPopupOperation = CrudPopupOperationType.AddProduct;
+            PopupTitle = "Adaugă Preparat Nou";
+            EditingPreparat = new Preparat { CantitateTotala = 0, CantitatePortie = 0, Pret = 0 }; // Instanță nouă
+            if (EditingPreparat is INotifyPropertyChanged npcPrep)
+            {
+                npcPrep.PropertyChanged += (_, __) =>
+                    (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+            await PopulateProductFormCollections();
+            if (AllCategoriesForForms.Any() && EditingPreparat.CategorieID == 0)
+            {
+                // Setează o categorie implicită sau lasă utilizatorul să aleagă
+                EditingPreparat.Categorie = AllCategoriesForForms.First(); // Leagă obiectul, nu doar ID-ul
+                EditingPreparat.CategorieID = EditingPreparat.Categorie.CategorieID;
+            }
             IsAddEditPopupOpen = true;
         }
+
+        private async void ExecuteShowEditProductPopup(object parameter)
+        {
+            if (SelectedPreparat == null) return;
+            ClearEditingState();
+            CurrentPopupOperation = CrudPopupOperationType.EditProduct;
+            PopupTitle = "Modifică Preparat";
+
+            var preparatFromDb = await _db.Preparate
+                                .Include(p => p.Categorie)
+                                .Include(p => p.AlergeniPreparate)
+                                .AsNoTracking() // Important pentru editare
+                                .FirstOrDefaultAsync(p => p.PreparatID == SelectedPreparat.PreparatID);
+
+            if (preparatFromDb == null) { MessageBox.Show("Preparatul nu a fost găsit."); return; }
+            EditingPreparat = preparatFromDb; // Lucrează pe o copie (AsNoTracking ajută) sau clonează manual
+
+            await PopulateProductFormCollections(EditingPreparat);
+            // Categoria ar trebui să fie setată automat dacă SelectedItem din ComboBox este legat la EditingPreparat.Categorie
+            // și AvailableCategories este sursa.
+            if (EditingPreparat.CategorieID > 0 && AllCategoriesForForms.Any())
+            {
+                EditingPreparat.Categorie = AllCategoriesForForms.FirstOrDefault(c => c.CategorieID == EditingPreparat.CategorieID);
+            }
+            IsAddEditPopupOpen = true;
+        }
+
+        private async void ExecuteShowAddMenuPopup(object p)
+        {
+            ClearEditingState();
+            CurrentPopupOperation = CrudPopupOperationType.AddMenu;
+            PopupTitle = "Adaugă Meniu Nou";
+            EditingMeniu = new Meniu { DiscountProcent = 0 };
+            if (EditingMeniu is INotifyPropertyChanged npcMenu)
+            {
+                npcMenu.PropertyChanged += (_, __) =>
+                    (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+
+            await PopulateMenuFormCollections();
+            if (AllCategoriesForForms.Any() && EditingMeniu.CategorieID == 0)
+            {
+                EditingMeniu.Categorie = AllCategoriesForForms.First();
+                EditingMeniu.CategorieID = EditingMeniu.Categorie.CategorieID;
+            }
+            IsAddEditPopupOpen = true;
+        }
+        private async void ExecuteShowEditMenuPopup(object p)
+        {
+            if (SelectedMeniu == null) return;
+            ClearEditingState();
+            CurrentPopupOperation = CrudPopupOperationType.EditMenu;
+            PopupTitle = "Modifică Meniu";
+            EditingMeniu = await _db.Meniuri
+                .Include(m => m.Categorie)
+                .Include(m => m.MeniuPreparate) // Necesar pentru a pre-selecta
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.MeniuID == SelectedMeniu.MeniuID);
+            if (EditingMeniu == null) { MessageBox.Show("Meniul nu a fost găsit."); return; }
+            await PopulateMenuFormCollections(EditingMeniu);
+            if (EditingMeniu.CategorieID > 0 && AllCategoriesForForms.Any())
+            {
+                EditingMeniu.Categorie = AllCategoriesForForms.FirstOrDefault(c => c.CategorieID == EditingMeniu.CategorieID);
+            }
+            IsAddEditPopupOpen = true;
+        }
+
+        private bool CanExecuteSaveCrudItem()
+        {
+            if (_db == null) return false;
+            switch (_currentPopupOperation)
+            {
+                case CrudPopupOperationType.AddCategory:
+                case CrudPopupOperationType.EditCategory:
+                case CrudPopupOperationType.AddAllergen:
+                case CrudPopupOperationType.EditAllergen:
+                    return !string.IsNullOrWhiteSpace(SimpleEntryName);
+                case CrudPopupOperationType.AddProduct:
+                case CrudPopupOperationType.EditProduct:
+                    return EditingPreparat != null &&
+                           !string.IsNullOrWhiteSpace(EditingPreparat.Denumire) &&
+                           EditingPreparat.Pret > 0 &&
+                           EditingPreparat.CantitatePortie > 0 &&
+                           (EditingPreparat.Categorie != null || EditingPreparat.CategorieID > 0);
+                case CrudPopupOperationType.AddMenu:
+                case CrudPopupOperationType.EditMenu:
+                    return EditingMeniu != null &&
+                          !string.IsNullOrWhiteSpace(EditingMeniu.Denumire) &&
+                          (EditingMeniu.Categorie != null || EditingMeniu.CategorieID > 0) &&
+                          EditingMeniu.DiscountProcent >= 0 && EditingMeniu.DiscountProcent <= 100;
+            }
+            return false;
+        }
+
+        private async Task ExecuteSaveCrudItemAsync()
+        {
+            if (!CanExecuteSaveCrudItem()) return;
+
+            string itemName = SimpleEntryName?.Trim();
+            string procedureName = "";
+            string successMessageEntity = "";
+            Func<Task> reloadSpecificDataAsync = null;
+            bool isSimpleEntry = false;
+
+            // Asigură-te că _db este inițializat
+            if (_db == null)
+            {
+                MessageBox.Show("Eroare: Conexiunea la baza de date nu este disponibilă.", "Eroare Salvare");
+                return;
+            }
+
+            try
+            {
+                switch (_currentPopupOperation)
+                {
+                    case CrudPopupOperationType.AddCategory:
+                    case CrudPopupOperationType.EditCategory:
+                        successMessageEntity = "Categoria"; reloadSpecificDataAsync = LoadCategoriiAsync; isSimpleEntry = true;
+                        var catNameParam = new SqlParameter("@Denumire", SimpleEntryName.Trim());
+                        if (_currentPopupOperation == CrudPopupOperationType.AddCategory)
+                        {
+                            procedureName = "dbo.InsertCategorie";
+                            var catResult = await _db.Database.SqlQueryRaw<ScalarIntResult>($"EXEC {procedureName} @Denumire = {{0}}", SimpleEntryName.Trim()).ToListAsync();
+                            if (!catResult.Any() || catResult[0].Value <= 0) throw new Exception($"Adăugare {successMessageEntity.ToLower()} eșuată.");
+                            MessageBox.Show($"{successMessageEntity} '{SimpleEntryName.Trim()}' a fost adăugată cu ID-ul {(int)catResult[0].Value}.", "Succes");
+                        }
+                        else
+                        { // EditCategory
+                            procedureName = "dbo.UpdateCategorie";
+                            if (SelectedCategorie == null) throw new InvalidOperationException("Nicio categorie selectată pentru modificare.");
+                            var catIdParam = new SqlParameter("@CategorieID", SelectedCategorie.CategorieID);
+                            await _db.Database.ExecuteSqlRawAsync($"EXEC {procedureName} @CategorieID = {{0}}, @Denumire = {{1}}", catIdParam.Value, SimpleEntryName.Trim());
+                            MessageBox.Show($"{successMessageEntity} '{SimpleEntryName.Trim()}' a fost modificată.", "Succes");
+                        }
+                        break;
+
+                    case CrudPopupOperationType.AddAllergen:
+                    case CrudPopupOperationType.EditAllergen:
+                        successMessageEntity = "Alergenul"; reloadSpecificDataAsync = LoadAlergeniAsync; isSimpleEntry = true;
+                        var alNameParam = new SqlParameter("@Denumire", SimpleEntryName.Trim());
+                        if (_currentPopupOperation == CrudPopupOperationType.AddAllergen)
+                        {
+                            procedureName = "dbo.InsertAlergen";
+                            var alResult = await _db.Database.SqlQueryRaw<ScalarIntResult>($"EXEC {procedureName} @Denumire = {{0}}", SimpleEntryName.Trim()).ToListAsync();
+                            if (!alResult.Any() || alResult[0].Value <= 0) throw new Exception($"Adăugare {successMessageEntity.ToLower()} eșuată.");
+                            MessageBox.Show($"{successMessageEntity} '{SimpleEntryName.Trim()}' a fost adăugat cu ID-ul {(int)alResult[0].Value}.", "Succes");
+                        }
+                        else
+                        { // EditAllergen
+                            procedureName = "dbo.UpdateAlergen";
+                            if (SelectedAlergen == null) throw new InvalidOperationException("Niciun alergen selectat pentru modificare.");
+                            var alIdParam = new SqlParameter("@AlergenID", SelectedAlergen.AlergenID);
+                            await _db.Database.ExecuteSqlRawAsync($"EXEC {procedureName} @AlergenID = {{0}}, @Denumire = {{1}}", alIdParam.Value, SimpleEntryName.Trim());
+                            MessageBox.Show($"{successMessageEntity} '{SimpleEntryName.Trim()}' a fost modificat.", "Succes");
+                        }
+                        break;
+
+                    case CrudPopupOperationType.AddProduct:
+                    case CrudPopupOperationType.EditProduct:
+                        successMessageEntity = "Preparatul"; reloadSpecificDataAsync = LoadPreparateAsync;
+                        if (EditingPreparat.Categorie != null) EditingPreparat.CategorieID = EditingPreparat.Categorie.CategorieID;
+                        else if (EditingPreparat.CategorieID == 0 && AllCategoriesForForms.Any()) EditingPreparat.CategorieID = AllCategoriesForForms.First().CategorieID;
+
+                        if (EditingPreparat.CategorieID == 0) { MessageBox.Show("Vă rugăm selectați o categorie pentru preparat.", "Validare"); return; }
+
+                        // CORECȚIE AICI: Asigură-te că toate elementele array-ului sunt SqlParameter
+                        if (_currentPopupOperation == CrudPopupOperationType.AddProduct)
+                        {
+                            SqlParameter[] productParamsInsert = { // Definire explicită a tipului array-ului
+                        new SqlParameter("@Denumire", EditingPreparat.Denumire),
+                        new SqlParameter("@Pret", EditingPreparat.Pret),
+                        new SqlParameter("@CantitatePortie", EditingPreparat.CantitatePortie),
+                        new SqlParameter("@CantitateTotala", EditingPreparat.CantitateTotala),
+                        new SqlParameter("@CategorieID", EditingPreparat.CategorieID),
+                        new SqlParameter("@ListaFotografii", (object)EditingPreparat.ListaFotografii ?? DBNull.Value)
+                    };
+                            var prodResult = await _db.Database.SqlQueryRaw<ScalarIntResult>("EXEC dbo.InsertPreparat @Denumire, @Pret, @CantitatePortie, @CantitateTotala, @CategorieID, @ListaFotografii", productParamsInsert).ToListAsync();
+                            if (prodResult.Any() && prodResult[0].Value > 0) EditingPreparat.PreparatID = (int)prodResult[0].Value; else throw new Exception($"Inserare {successMessageEntity.ToLower()} eșuată.");
+                        }
+                        else
+                        { // EditProduct
+                            SqlParameter[] productParamsUpdate = { // Definire explicită a tipului array-ului
+                        new SqlParameter("@PreparatID", EditingPreparat.PreparatID),
+                        new SqlParameter("@Denumire", EditingPreparat.Denumire),
+                        new SqlParameter("@Pret", EditingPreparat.Pret),
+                        new SqlParameter("@CantitatePortie", EditingPreparat.CantitatePortie),
+                        new SqlParameter("@CantitateTotala", EditingPreparat.CantitateTotala),
+                        new SqlParameter("@CategorieID", EditingPreparat.CategorieID),
+                        new SqlParameter("@ListaFotografii", (object)EditingPreparat.ListaFotografii ?? DBNull.Value)
+                    };
+                            await _db.Database.ExecuteSqlRawAsync("EXEC dbo.UpdatePreparat @PreparatID, @Denumire, @Pret, @CantitatePortie, @CantitateTotala, @CategorieID, @ListaFotografii", productParamsUpdate);
+                        }
+                        var selectedAllergenIds = AllergensForProductForm.Where(a => a.IsSelected).Select(a => a.AlergenID).ToList();
+                        string allergenIdsString = string.Join(",", selectedAllergenIds);
+                        await _db.Database.ExecuteSqlRawAsync("EXEC dbo.SetPreparatAlergeni @PreparatID={0}, @AlergenIDsString={1}", EditingPreparat.PreparatID, string.IsNullOrEmpty(allergenIdsString) ? (object)DBNull.Value : allergenIdsString);
+                        MessageBox.Show($"{successMessageEntity} '{EditingPreparat.Denumire}' a fost salvat.", "Succes");
+                        break;
+
+                    case CrudPopupOperationType.AddMenu:
+                    case CrudPopupOperationType.EditMenu:
+                        successMessageEntity = "Meniul"; reloadSpecificDataAsync = LoadMeniuriAsync;
+                        if (EditingMeniu.Categorie != null) EditingMeniu.CategorieID = EditingMeniu.Categorie.CategorieID;
+                        else if (EditingMeniu.CategorieID == 0 && AllCategoriesForForms.Any()) EditingMeniu.CategorieID = AllCategoriesForForms.First().CategorieID;
+
+                        if (EditingMeniu.CategorieID == 0) { MessageBox.Show("Vă rugăm selectați o categorie pentru meniu.", "Validare"); return; }
+
+                        // CORECȚIE AICI: Asigură-te că toate elementele array-ului sunt SqlParameter
+                        if (_currentPopupOperation == CrudPopupOperationType.AddMenu)
+                        {
+                            SqlParameter[] menuParamsInsert = { // Definire explicită
+                        new SqlParameter("@Denumire", EditingMeniu.Denumire),
+                        new SqlParameter("@Descriere", (object)EditingMeniu.Descriere ?? DBNull.Value),
+                        new SqlParameter("@CategorieID", EditingMeniu.CategorieID),
+                        new SqlParameter("@DiscountProcent", EditingMeniu.DiscountProcent),
+                        new SqlParameter("@ListaFotografii", (object)EditingMeniu.ListaFotografii ?? DBNull.Value)
+                    };
+                            var menuResult = await _db.Database.SqlQueryRaw<ScalarIntResult>("EXEC dbo.InsertMeniu @Denumire, @Descriere, @CategorieID, @DiscountProcent, @ListaFotografii", menuParamsInsert).ToListAsync();
+                            if (menuResult.Any() && menuResult[0].Value > 0) EditingMeniu.MeniuID = (int)menuResult[0].Value; else throw new Exception($"Inserare {successMessageEntity.ToLower()} eșuată.");
+                        }
+                        else
+                        { // EditMenu
+                            SqlParameter[] menuParamsUpdate = { // Definire explicită
+                        new SqlParameter("@MeniuID", EditingMeniu.MeniuID),
+                        new SqlParameter("@Denumire", EditingMeniu.Denumire),
+                        new SqlParameter("@Descriere", (object)EditingMeniu.Descriere ?? DBNull.Value),
+                        new SqlParameter("@CategorieID", EditingMeniu.CategorieID),
+                        new SqlParameter("@DiscountProcent", EditingMeniu.DiscountProcent),
+                        new SqlParameter("@ListaFotografii", (object)EditingMeniu.ListaFotografii ?? DBNull.Value)
+                    };
+                            await _db.Database.ExecuteSqlRawAsync("EXEC dbo.UpdateMeniu @MeniuID, @Denumire, @Descriere, @CategorieID, @DiscountProcent, @ListaFotografii", menuParamsUpdate);
+                        }
+                        var preparateInMeniuStrings = PreparateForMenuForm.Where(psvm => psvm.IsSelectedInMenu && psvm.CantitateInMeniu > 0).Select(psvm => $"{psvm.PreparatID}:{psvm.CantitateInMeniu.ToString(CultureInfo.InvariantCulture)}").ToList();
+                        string preparateDataString = string.Join(",", preparateInMeniuStrings);
+                        await _db.Database.ExecuteSqlRawAsync("EXEC dbo.SetMeniuPreparate @MeniuID={0}, @PreparateDataString={1}", EditingMeniu.MeniuID, string.IsNullOrEmpty(preparateDataString) ? (object)DBNull.Value : preparateDataString);
+                        MessageBox.Show($"{successMessageEntity} '{EditingMeniu.Denumire}' a fost salvat.", "Succes");
+                        break;
+
+                    default: throw new InvalidOperationException("Tip de operație CRUD necunoscut sau neimplementat pentru salvare.");
+                }
+
+                IsAddEditPopupOpen = false;
+                if (reloadSpecificDataAsync != null) await reloadSpecificDataAsync.Invoke();
+            }
+            catch (SqlException ex)
+            {
+                string errorMessage = ex.Errors.Count > 0 ? ex.Errors[0].Message : ex.Message;
+                MessageBox.Show($"Eroare SQL: {errorMessage}", $"Eroare Salvare {successMessageEntity}", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Eroare la salvare: {ex.Message}", "Eroare Generală", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                ClearEditingState();
+                _currentPopupOperation = CrudPopupOperationType.None; // Resetează după fiecare operațiune
+            }
+        }
+
 
         private bool CanExecuteSaveNewItem(object parameter)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -32,35 +33,111 @@ namespace RestaurantComenzi.Models
         public ICollection<AlergenPreparat> AlergeniPreparate { get; set; }
     }
 
-    public class Preparat
+    public class Preparat : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        // ID rămâne auto-implemented
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int PreparatID { get; set; }
 
+        private string _denumire;
         [Required]
         [MaxLength(255)]
-        public string Denumire { get; set; }
+        public string Denumire
+        {
+            get => _denumire;
+            set
+            {
+                if (_denumire != value)
+                {
+                    _denumire = value;
+                    OnPropertyChanged(nameof(Denumire));
+                }
+            }
+        }
 
+        private decimal _pret;
         [Required]
         [Column(TypeName = "decimal(10, 2)")]
-        public decimal Pret { get; set; }
+        public decimal Pret
+        {
+            get => _pret;
+            set
+            {
+                if (_pret != value)
+                {
+                    _pret = value;
+                    OnPropertyChanged(nameof(Pret));
+                }
+            }
+        }
 
+        private decimal _cantitatePortie;
         [Required]
         [Column(TypeName = "decimal(10, 2)")]
-        public decimal CantitatePortie { get; set; }
+        public decimal CantitatePortie
+        {
+            get => _cantitatePortie;
+            set
+            {
+                if (_cantitatePortie != value)
+                {
+                    _cantitatePortie = value;
+                    OnPropertyChanged(nameof(CantitatePortie));
+                }
+            }
+        }
 
+        private decimal _cantitateTotala;
         [Required]
         [Column(TypeName = "decimal(10, 3)")]
-        public decimal CantitateTotala { get; set; }
+        public decimal CantitateTotala
+        {
+            get => _cantitateTotala;
+            set
+            {
+                if (_cantitateTotala != value)
+                {
+                    _cantitateTotala = value;
+                    OnPropertyChanged(nameof(CantitateTotala));
+                }
+            }
+        }
 
+        private int _categorieId;
         [Required]
-        public int CategorieID { get; set; }
+        public int CategorieID
+        {
+            get => _categorieId;
+            set
+            {
+                if (_categorieId != value)
+                {
+                    _categorieId = value;
+                    OnPropertyChanged(nameof(CategorieID));
+                }
+            }
+        }
 
+        private Categorie _categorie;
         [ForeignKey("CategorieID")]
-        public Categorie Categorie { get; set; }
+        public Categorie Categorie
+        {
+            get => _categorie;
+            set
+            {
+                if (_categorie != value)
+                {
+                    _categorie = value;
+                    OnPropertyChanged(nameof(Categorie));
+                }
+            }
+        }
 
-         
         public string? ListaFotografii { get; set; }
 
         public ICollection<AlergenPreparat> AlergeniPreparate { get; set; }
@@ -68,25 +145,91 @@ namespace RestaurantComenzi.Models
         public ICollection<ComandaPreparat> ComenziPreparate { get; set; }
     }
 
-    public class Meniu
+    public class Meniu : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int MeniuID { get; set; }
 
+        private string _denumire;
         [Required]
         [MaxLength(255)]
-        public string Denumire { get; set; }
+        public string Denumire
+        {
+            get => _denumire;
+            set
+            {
+                if (_denumire != value)
+                {
+                    _denumire = value;
+                    OnPropertyChanged(nameof(Denumire));
+                }
+            }
+        }
 
-        public string Descriere { get; set; } 
+        private string _descriere;
+        public string Descriere
+        {
+            get => _descriere;
+            set
+            {
+                if (_descriere != value)
+                {
+                    _descriere = value;
+                    OnPropertyChanged(nameof(Descriere));
+                }
+            }
+        }
 
+        private int _categorieId;
         [Required]
-        public int CategorieID { get; set; }
+        public int CategorieID
+        {
+            get => _categorieId;
+            set
+            {
+                if (_categorieId != value)
+                {
+                    _categorieId = value;
+                    OnPropertyChanged(nameof(CategorieID));
+                }
+            }
+        }
 
+        private Categorie _categorie;
         [ForeignKey("CategorieID")]
-        public Categorie Categorie { get; set; }
+        public Categorie Categorie
+        {
+            get => _categorie;
+            set
+            {
+                if (_categorie != value)
+                {
+                    _categorie = value;
+                    OnPropertyChanged(nameof(Categorie));
+                }
+            }
+        }
 
-        public decimal DiscountProcent { get; set; }
+        private decimal _discountProcent;
+        public decimal DiscountProcent
+        {
+            get => _discountProcent;
+            set
+            {
+                if (_discountProcent != value)
+                {
+                    _discountProcent = value;
+                    OnPropertyChanged(nameof(DiscountProcent));
+                }
+            }
+        }
 
         public string? ListaFotografii { get; set; }
 
