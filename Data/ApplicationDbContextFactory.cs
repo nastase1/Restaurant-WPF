@@ -9,7 +9,6 @@ namespace RestaurantComenzi.Data
         {
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
 
-            // Același connection string ca în App.config
             optionsBuilder.UseSqlServer("Server=TEODOR;Database=RestaurantComenzi;Trusted_Connection=True;TrustServerCertificate=True;");
 
             return new ApplicationDbContext(optionsBuilder.Options);

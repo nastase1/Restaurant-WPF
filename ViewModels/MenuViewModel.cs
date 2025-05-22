@@ -1,5 +1,4 @@
-﻿// În Restaurant.ViewModels.MenuViewModel.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -95,7 +94,6 @@ namespace Restaurant.ViewModels
             }
         }
 
-        // ACTUALIZAT placeholder-ul
         public string SearchPlaceholderText =>
             SelectedSearchMode == SearchModeOptions.ByName
                 ? "Caută după nume..."
@@ -112,11 +110,8 @@ namespace Restaurant.ViewModels
             {
                 _db = App.ServiceProvider.GetService<ApplicationDbContext>();
             }
-            // Dacă _db rămâne null (de ex., în design time sau dacă ServiceProvider eșuează), 
-            // ShoppingCartViewModel va primi null pentru dbContext.
-            // Acest caz este gestionat în ShoppingCartViewModel.ExecutePlaceOrderAsync.
 
-            ShoppingCart = new ShoppingCartViewModel(_db, () => _currentUserId); // Pasează _db și funcția lambda pentru ID
+            ShoppingCart = new ShoppingCartViewModel(_db, () => _currentUserId); 
 
             AddToCartCommand = new RelayCommand(OnAddToCart, CanAddToCart);
             ToggleCartPopupCommand = new RelayCommand(OnToggleCartPopup);
@@ -125,7 +120,7 @@ namespace Restaurant.ViewModels
 
             try
             {
-                if (!isInDesignTime && _db != null) // Verifică și _db aici
+                if (!isInDesignTime && _db != null) 
                 {
                     var cats = _db.Categorii.Select(c => new CategoryViewModel(c)).ToList();
                     Categories.Clear();
@@ -139,7 +134,7 @@ namespace Restaurant.ViewModels
                 }
                 else
                 {
-                    LoadDesignTimeData(); // Încarcă date de test dacă _db e null sau suntem în design time
+                    LoadDesignTimeData(); 
                 }
             }
             catch (Exception ex)
@@ -158,21 +153,15 @@ namespace Restaurant.ViewModels
             if (!Categories.Any())
             {
                 Categories.Add(new CategoryViewModel(null) { Name = "Toate" });
-                // Simulare Categorie reală pentru a evita probleme cu Entity == null în SelectedCategory
-                // Este doar un exemplu, ajustează la nevoie dacă CategorieViewModel necesită o entitate non-null.
                 var catTest = new Categorie { CategorieID = 1, Denumire = "Test Cat" };
                 Categories.Add(new CategoryViewModel(catTest));
             }
             if (SelectedCategory == null) SelectedCategory = Categories.First();
 
-            // Poți adăuga aici date de test pentru FilteredProducts și FilteredMenus
-            // dacă este necesar pentru design-time.
         }
 
         private void SafeUpdateMenus()
         {
-            // Verifică dacă _db sau SelectedCategory sunt null înainte de a continua,
-            // cu excepția cazului în care suntem în design time.
             if ((_db == null || SelectedCategory == null) && !DesignerProperties.GetIsInDesignMode(new DependencyObject()))
             {
                 FilteredMenus.Clear();
@@ -192,15 +181,12 @@ namespace Restaurant.ViewModels
             }
             else
             {
-                // Simulare date pentru design-time
                 var designTimeMenus = new List<MeniuViewModel>();
-                // Adaugă aici MeniuViewModel-uri de test dacă rulezi în designer
-                // Exemplu: designTimeMenus.Add(new MeniuViewModel(new Meniu { Denumire = "Meniu Design", /* ... alte proprietăți ... */ }));
                 foreach (var m in designTimeMenus) FilteredMenus.Add(m);
                 return;
             }
 
-            if (SelectedCategory.Entity != null) // Filtrează după categorie dacă nu este "Toate"
+            if (SelectedCategory.Entity != null) 
             {
                 query = query.Where(m => m.CategorieID == SelectedCategory.Entity.CategorieID);
             }
@@ -219,7 +205,7 @@ namespace Restaurant.ViewModels
                 {
                     tempList.AddRange(allMenusFromDbOrDesignTime.Where(mvm => mvm.Name.ToLower().Contains(lowerSearchKeyword)));
                 }
-                else // ExcludeByAllergen - LOGICĂ ACTUALIZATĂ
+                else 
                 {
                     var allergensToExclude = lowerSearchKeyword.Split(',')
                                                  .Select(allergen => allergen.Trim())
@@ -236,7 +222,7 @@ namespace Restaurant.ViewModels
                             )
                         ));
                     }
-                    else // Niciun alergen valid de exclus specificat
+                    else 
                     {
                         tempList.AddRange(allMenusFromDbOrDesignTime);
                     }
@@ -279,15 +265,13 @@ namespace Restaurant.ViewModels
             }
             else
             {
-                // Simulare date pentru design-time
+                
                 var designTimeProducts = new List<ProductViewModel>();
-                // Adaugă ProductViewModel-uri de test
-                // Exemplu: designTimeProducts.Add(new ProductViewModel(new Preparat { Denumire = "Produs Design", /* ... */ }));
                 foreach (var p in designTimeProducts) FilteredProducts.Add(p);
                 return;
             }
 
-            if (SelectedCategory.Entity != null) // Filtrează după categorie dacă nu este "Toate"
+            if (SelectedCategory.Entity != null) 
             {
                 query = query.Where(p => p.CategorieID == SelectedCategory.Entity.CategorieID);
             }
@@ -306,7 +290,7 @@ namespace Restaurant.ViewModels
                 {
                     tempList.AddRange(allProductsFromDbOrDesignTime.Where(pvm => pvm.Name.ToLower().Contains(lowerSearchKeyword)));
                 }
-                else // ExcludeByAllergen - LOGICĂ ACTUALIZATĂ
+                else 
                 {
                     var allergensToExclude = lowerSearchKeyword.Split(',')
                                                  .Select(allergen => allergen.Trim())
@@ -322,7 +306,7 @@ namespace Restaurant.ViewModels
                             )
                         ));
                     }
-                    else // Niciun alergen valid de exclus specificat
+                    else 
                     {
                         tempList.AddRange(allProductsFromDbOrDesignTime);
                     }
@@ -371,38 +355,23 @@ namespace Restaurant.ViewModels
 
         private void ExecuteLogout(object parameter)
         {
-            // Găsește fereastra curentă (MenuWindow)
             Window currentMenuWindow = null;
             foreach (Window window in Application.Current.Windows)
             {
-                // Verificăm dacă DataContext-ul ferestrei este instanța curentă a MenuViewModel
-                // și dacă fereastra este de tipul MenuWindow (pentru siguranță)
                 if (window.DataContext == this && window is MenuWindow)
                 {
                     currentMenuWindow = window;
                     break;
                 }
             }
-            // O alternativă mai simplă ar fi dacă MenuWindow este garantat Application.Current.MainWindow
-            // Window currentMenuWindow = Application.Current.MainWindow;
+            
+            var loginWindow = new MainWindow(); 
 
-
-            // Creează și afișează o nouă instanță a ferestrei de Login
-            var loginWindow = new MainWindow(); // Asigură-te că namespace-ul Restaurant.View este corect
-
-            // Setează LoginWindow ca fereastră principală a aplicației
-            // Acest lucru este important pentru ca aplicația să nu se închidă dacă MenuWindow era MainWindow
             Application.Current.MainWindow = loginWindow;
             loginWindow.Show();
 
-            // Închide fereastra MenuWindow curentă
-            currentMenuWindow.Close(); // Folosește null-conditional operator pentru siguranță
+            currentMenuWindow.Close(); 
 
-            // Aici ai putea reseta și starea globală de autentificare, dacă ai un serviciu dedicat.
-            // De exemplu: AuthenticationService.Instance.Logout();
-            // În modelul nostru actual, simpla închidere a MenuWindow și deschiderea LoginWindow
-            // este suficientă, deoarece o nouă instanță de MenuViewModel (cu un nou _currentUserId)
-            // va fi creată la următorul login reușit.
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

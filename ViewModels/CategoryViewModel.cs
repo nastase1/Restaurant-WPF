@@ -1,5 +1,4 @@
-﻿// CategoryViewModel.cs
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using RestaurantComenzi.Models;
 

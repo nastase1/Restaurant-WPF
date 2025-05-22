@@ -15,9 +15,6 @@ using Restaurant.ViewModels;
 
 namespace Restaurant.View
 {
-    /// <summary>
-    /// Interaction logic for MenuWindowWithoutAccount.xaml
-    /// </summary>
     public partial class MenuWindowWithoutAccount : Window
     {
         public MenuWindowWithoutAccount()

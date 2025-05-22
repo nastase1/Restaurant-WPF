@@ -93,7 +93,6 @@ namespace Restaurant.ViewModels
                     return;
                 }
 
-                // Obține fereastra curentă de login
                 Window currentLoginWindow = null;
                 foreach (Window w in Application.Current.Windows)
                 {
@@ -103,7 +102,6 @@ namespace Restaurant.ViewModels
                         break;
                     }
                 }
-                // Fallback dacă nu se găsește fereastra activă cu acest DataContext
                 if (currentLoginWindow == null) currentLoginWindow = Application.Current.MainWindow;
 
 
@@ -117,10 +115,10 @@ namespace Restaurant.ViewModels
                     };
 
                     Application.Current.MainWindow = employeeWindow;
-                    currentLoginWindow?.Close(); // Închide fereastra de login dacă a fost găsită
+                    currentLoginWindow?.Close(); 
                     employeeWindow.Show();
                 }
-                else // Presupunem "Client" sau orice alt tip
+                else 
                 {
                     MessageBox.Show($"Autentificare reușită Client: {user.Nume} {user.Prenume}", "Succes Client", MessageBoxButton.OK, MessageBoxImage.Information);
                     var menuViewModel = new MenuViewModel(user.ContUtilizatorID);
@@ -130,7 +128,7 @@ namespace Restaurant.ViewModels
                     };
 
                     Application.Current.MainWindow = menuWindow;
-                    currentLoginWindow?.Close(); // Închide fereastra de login dacă a fost găsită
+                    currentLoginWindow?.Close(); 
                     menuWindow.Show();
                 }
             }
@@ -160,13 +158,11 @@ namespace Restaurant.ViewModels
             var menuWindowWithoutAccount = new MenuWindowWithoutAccount();
             menuWindowWithoutAccount.Show();
 
-            // Ascundem fereastra curentă
             if (Application.Current.MainWindow != null)
             {
                 Application.Current.MainWindow.Close();
             }
 
-            // Setăm noua fereastră ca MainWindow, dacă vrei să o folosești ca principală mai departe
             Application.Current.MainWindow = menuWindowWithoutAccount;
         }
 

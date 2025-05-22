@@ -1,5 +1,4 @@
-﻿// În Restaurant.ViewModels.ShoppingCartViewModel.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -9,8 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
-// Asigură-te că ai implementarea pentru RelayCommand (am adăugat un exemplu în răspunsul anterior)
-using Restaurant.Service; // Sau unde ai definit RelayCommand
+using Restaurant.Service; 
 using RestaurantComenzi.Data;
 using RestaurantComenzi.Models;
 
@@ -64,7 +62,7 @@ namespace Restaurant.ViewModels
                 {
                     _calculatedDiscountAmount = value;
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(IsDiscountApplied)); // Notifică și noua proprietate
+                    OnPropertyChanged(nameof(IsDiscountApplied)); 
                 }
             }
         }
@@ -138,7 +136,6 @@ namespace Restaurant.ViewModels
             {
                 try
                 {
-                    // Pasul 1: Verificare stoc
                     foreach (var cartItem in Items)
                     {
                         if (cartItem.OriginalItem is ProductViewModel pvm)
@@ -156,13 +153,12 @@ namespace Restaurant.ViewModels
                         {
                             if (mvm.Entity.MeniuPreparate != null)
                             {
-                                foreach (var meniuPreparatEntry in mvm.Entity.MeniuPreparate.ToList()) // ToList() dacă vei modifica colecția sau pentru siguranță în iterație
+                                foreach (var meniuPreparatEntry in mvm.Entity.MeniuPreparate.ToList()) 
                                 {
                                     var preparatComponent = await _dbContext.Preparate.FindAsync(meniuPreparatEntry.PreparatID);
                                     if (preparatComponent == null)
                                         throw new Exception($"Preparatul component cu ID {meniuPreparatEntry.PreparatID} din meniul \"{mvm.Name}\" nu a fost găsit.");
 
-                                    // Aici 'meniuPreparatEntry.Cantitate' este gramajul specific al 'preparatComponent' în acest meniu.
                                     decimal gramajNecesarComponentPtUnMeniu = meniuPreparatEntry.Cantitate;
                                     decimal gramajTotalNecesarComponent = gramajNecesarComponentPtUnMeniu * cartItem.Quantity;
 
@@ -175,8 +171,7 @@ namespace Restaurant.ViewModels
                         }
                     }
 
-                    // Obține adresa de livrare default (trebuie adaptat dacă vrei să permiți alegerea adresei)
-                    var utilizatorCurent = await _dbContext.ConturiUtilizatori.FindAsync(currentUserId.Value); // Verifică numele DbSet 'ConturiUtilizatori'
+                    var utilizatorCurent = await _dbContext.ConturiUtilizatori.FindAsync(currentUserId.Value); 
                     string adresaLivrare = utilizatorCurent?.AdresaLivrare ?? "Adresă neprecizată";
 
 
@@ -185,21 +180,15 @@ namespace Restaurant.ViewModels
                         DataComanda = DateTime.Now,
                         CodComanda = $"CMD-{DateTime.Now:yyyyMMddHHmmssfff}",
                         CostMancare = Subtotal,
-                        // DiscountAplicat = DiscountAmount, // Adaugă 'DiscountAplicat' în entitatea Comanda
                         CostTransport = CalculatedShippingCost,
                         CostTotal = GrandTotal,
                         OraEstimativaLivrare = DateTime.Now.AddMinutes(45),
                         Stare = "Plasată",
                         ContUtilizatorID = currentUserId.Value,
-                        // AdresaLivrareComanda = adresaLivrare, // Adaugă 'AdresaLivrareComanda' în entitatea Comanda
                         ComenziPreparate = new List<ComandaPreparat>()
                     };
                     _dbContext.Comenzi.Add(nouaComanda);
-                    // Trebuie să salvezi comanda o dată pentru a obține ComandaID înainte de a adăuga ComenziPreparate dacă ai constrângeri FK stricte
-                    // Sau adaugă ComenziPreparate la context și EF se ocupă de ordinea la SaveChanges.
-                    // Mai sigur e să lași EF să gestioneze:
 
-                    // Pasul 2: Adaugă detalii comandă și actualizează stocul
                     foreach (var cartItem in Items)
                     {
                         if (cartItem.OriginalItem is ProductViewModel pvm)
@@ -210,17 +199,14 @@ namespace Restaurant.ViewModels
                                 preparatInDb.CantitateTotala -= (pvm.Entity.CantitatePortie * cartItem.Quantity);
                                 nouaComanda.ComenziPreparate.Add(new ComandaPreparat
                                 {
-                                    // ComandaID = nouaComanda.ComandaID, // EF va seta asta
                                     Comanda = nouaComanda,
                                     PreparatID = pvm.Entity.PreparatID,
                                     Bucati = cartItem.Quantity
-                                    // PretUnitarLaComanda = pvm.Price // Adaugă 'PretUnitarLaComanda' în entitatea ComandaPreparat
                                 });
                             }
                         }
                         else if (cartItem.OriginalItem is MeniuViewModel mvm)
                         {
-                            // Pentru fiecare meniu comandat, adaugă preparatele sale componente în ComandaPreparat
                             if (mvm.Entity.MeniuPreparate != null)
                             {
                                 foreach (var meniuPreparatEntry in mvm.Entity.MeniuPreparate.ToList())
@@ -228,28 +214,15 @@ namespace Restaurant.ViewModels
                                     var preparatComponentInDb = await _dbContext.Preparate.FindAsync(meniuPreparatEntry.PreparatID);
                                     if (preparatComponentInDb != null)
                                     {
-                                        // 'meniuPreparatEntry.Cantitate' este gramajul specific al preparatului în meniu
                                         decimal gramajConsumatComponent = meniuPreparatEntry.Cantitate * cartItem.Quantity;
                                         preparatComponentInDb.CantitateTotala -= gramajConsumatComponent;
 
-                                        // Adaugă fiecare component al meniului ca o linie separată în ComandaPreparat.
-                                        // 'Bucati' aici ar putea reprezenta numărul de "porții de component din meniu"
-                                        // Dacă un meniu conține "1 porție de X (150g)", și se comandă 2 meniuri, atunci se adaugă 2 "porții de X (150g)"
-                                        // 'cartItem.Quantity' este numărul de meniuri.
-                                        // 'meniuPreparatEntry.Cantitate' este gramajul, nu un număr de "bucăți" al componentei în sine.
-                                        // Ai nevoie de o convenție clară pentru 'Bucati' în ComandaPreparat pentru componentele de meniu.
-                                        // O opțiune ar fi ca 'Bucati' să fie 'cartItem.Quantity' (nr. de meniuri), și prețul să fie ajustat.
-                                        // Sau, dacă meniul e tratat ca o singură unitate cu preț fix, și doar scazi stocul componentelor.
-                                        // Având în vedere că ComandaPreparat are doar PreparatID și Bucati, e mai simplu să adaugi fiecare preparat component.
 
                                         nouaComanda.ComenziPreparate.Add(new ComandaPreparat
                                         {
                                             Comanda = nouaComanda,
                                             PreparatID = meniuPreparatEntry.PreparatID,
-                                            Bucati = cartItem.Quantity, // Aici 'Bucati' se referă la de câte ori apare acest preparat (ca parte dintr-un meniu) în comandă.
-                                                                        // Prețul ar trebui să fie calculat proporțional din prețul meniului sau 0 dacă prețul e pe Meniu.
-                                                                        // Acest model de ComandaPreparat nu suportă direct stocarea "1 Meniu X", ci doar "N * PreparatComponentY".
-                                                                        // PretUnitarLaComanda = ? // Complex de calculat aici dacă nu e stocat per meniu
+                                            Bucati = cartItem.Quantity, 
                                         });
                                     }
                                 }
@@ -322,9 +295,7 @@ namespace Restaurant.ViewModels
             }
             else { return; }
 
-            if (newItemToAdd != null) { Items.Add(newItemToAdd); } // Va declanșa Recalculate via CollectionChanged
-            // else, Quantity a fost incrementată, CartItem_PropertyChanged_Async ar trebui să se ocupe dacă Quantity notifică schimbarea TotalPriceItem
-            // For safety, if existingItem.Quantity++ itself doesn't guarantee a recalculation through events:
+            if (newItemToAdd != null) { Items.Add(newItemToAdd); } 
             else if (existingItem != null) { await RecalculateAllTotalsAsync(); }
         }
 
@@ -332,7 +303,7 @@ namespace Restaurant.ViewModels
         {
             if (parameter is CartItemViewModel itemToRemove)
             {
-                Items.Remove(itemToRemove); // Va declanșa Recalculate via CollectionChanged
+                Items.Remove(itemToRemove); 
             }
         }
         private bool CanExecuteRemoveItem(object parameter) { return parameter is CartItemViewModel; }
@@ -344,11 +315,11 @@ namespace Restaurant.ViewModels
                 int newQuantity = item.Quantity + change;
                 if (newQuantity <= 0)
                 {
-                    Items.Remove(item); // Va declanșa Recalculate via CollectionChanged
+                    Items.Remove(item); 
                 }
                 else
                 {
-                    item.Quantity = newQuantity; // Va declanșa Recalculate via CartItem_PropertyChanged_Async
+                    item.Quantity = newQuantity; 
                 }
             }
         }
@@ -360,7 +331,7 @@ namespace Restaurant.ViewModels
                 {
                     item.PropertyChanged -= CartItem_PropertyChanged_Async;
                 }
-                Items.Clear(); // Va declanșa Recalculate via CollectionChanged
+                Items.Clear(); 
             }
         }
 
@@ -372,13 +343,11 @@ namespace Restaurant.ViewModels
             decimal discountToApply = 0;
             bool discountEligible = false;
 
-            // Condiția 1: Comanda este mai mare decat o anumita suma (y lei)
             if (currentSubtotal > Y_SumaMinimaDiscountComanda)
             {
                 discountEligible = true;
             }
 
-            // Condiția 2: Daca ai mai mult de z comenzi intr-un interval t de timp
             var currentUserId = _getCurrentUserId();
             if (!discountEligible && currentUserId.HasValue && Z_NumarComenziDiscountIstoric > 0 && T_IntervalZileDiscountIstoric > 0)
             {
@@ -390,7 +359,7 @@ namespace Restaurant.ViewModels
                                                              o.DataComanda >= startDate &&
                                                              o.Stare != "Anulata")
                                                  .CountAsync();
-                    if (recentOrderCount > Z_NumarComenziDiscountIstoric) // "mai mult de z"
+                    if (recentOrderCount > Z_NumarComenziDiscountIstoric) 
                     {
                         discountEligible = true;
                     }
@@ -406,13 +375,12 @@ namespace Restaurant.ViewModels
                 discountToApply = decimal.Round(currentSubtotal * W_ProcentDiscount, 2);
             }
 
-            // Când DiscountAmount este setat, OnPropertyChanged(nameof(IsDiscountApplied)) va fi apelat din setter-ul DiscountAmount
             DiscountAmount = discountToApply;
 
             OnPropertyChanged(nameof(SubtotalAfterDiscount));
 
             decimal subtotalForShippingCalc = SubtotalAfterDiscount;
-            if (A_SumaMinimaFaraTransport >= 0 && subtotalForShippingCalc < A_SumaMinimaFaraTransport) // Am ajustat condiția pentru A_SumaMinimaFaraTransport >= 0
+            if (A_SumaMinimaFaraTransport >= 0 && subtotalForShippingCalc < A_SumaMinimaFaraTransport) 
             {
                 CalculatedShippingCost = B_CostTransportStandard;
             }

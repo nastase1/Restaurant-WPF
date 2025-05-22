@@ -39,7 +39,6 @@ namespace RestaurantComenzi.Models
         protected void OnPropertyChanged(string propertyName)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // ID rămâne auto-implemented
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int PreparatID { get; set; }

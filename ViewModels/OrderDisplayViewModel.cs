@@ -11,7 +11,6 @@ namespace Restaurant.ViewModels
 {
     public class OrderDisplayViewModel : INotifyPropertyChanged
     {
-        // ... proprietățile existente (ComandaID, CodComanda, Stare, OriginalOrder etc.) ...
         public int ComandaID { get; set; }
         public string CodComanda { get; set; }
         public DateTime DataComanda { get; set; }
@@ -35,22 +34,20 @@ namespace Restaurant.ViewModels
                 {
                     _stare = value;
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(CanChangeStatus)); // Notifică schimbarea pentru vizibilitate
+                    OnPropertyChanged(nameof(CanChangeStatus)); 
                 }
             }
         }
 
-        // NOU: Proprietate pentru a verifica dacă avem o comandă validă selectată (OriginalOrder nu e null)
         public bool IsOrderSelected => OriginalOrder != null;
 
-        // NOU: Proprietate pentru a controla vizibilitatea opțiunilor de schimbare a stării
         public bool CanChangeStatus => OriginalOrder != null && Stare != "Livrată" && Stare != "Anulată";
 
 
         public OrderDisplayViewModel(Comanda comanda)
         {
             OriginalOrder = comanda;
-            if (comanda != null) // Populează doar dacă comanda nu e null
+            if (comanda != null) 
             {
                 ComandaID = comanda.ComandaID;
                 CodComanda = comanda.CodComanda;
@@ -62,7 +59,7 @@ namespace Restaurant.ViewModels
                 CostTransport = comanda.CostTransport;
                 CostTotal = comanda.CostTotal;
                 OraEstimativaLivrare = comanda.OraEstimativaLivrare;
-                Stare = comanda.Stare; // Acesta va apela și OnPropertyChanged(nameof(CanChangeStatus))
+                Stare = comanda.Stare; 
                 ProduseComandate = comanda.ComenziPreparate?
                     .Select(cp => $"{cp.Preparat?.Denumire} x {cp.Bucati}")
                     .ToList() ?? new List<string>();

@@ -1,9 +1,8 @@
-﻿// În Restaurant.Converters.CrudOperationToVisibilityConverter.cs
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
-using Restaurant.ViewModels; // Pentru CrudPopupOperationType
+using Restaurant.ViewModels; 
 
 namespace Restaurant.Converters
 {
@@ -16,7 +15,7 @@ namespace Restaurant.Converters
                 var targetOperations = targetOperationsString.Split('|');
                 foreach (var targetOpString in targetOperations)
                 {
-                    if (Enum.TryParse<CrudPopupOperationType>(targetOpString, true, out var targetOperation)) // true pentru ignore case
+                    if (Enum.TryParse<CrudPopupOperationType>(targetOpString, true, out var targetOperation))
                     {
                         if (currentOperation == targetOperation)
                             return Visibility.Visible;

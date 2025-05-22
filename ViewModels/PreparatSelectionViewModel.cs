@@ -1,13 +1,12 @@
-﻿// În Restaurant.ViewModels.PreparatSelectionViewModel.cs
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using RestaurantComenzi.Models; // Pentru a putea referi Preparat
+using RestaurantComenzi.Models; 
 
 namespace Restaurant.ViewModels
 {
     public class PreparatSelectionViewModel : INotifyPropertyChanged
     {
-        public Preparat PreparatOriginal { get; } // Păstrează referința la preparatul original
+        public Preparat PreparatOriginal { get; } 
 
         public int PreparatID => PreparatOriginal.PreparatID;
         public string Denumire => PreparatOriginal.Denumire;
@@ -19,7 +18,7 @@ namespace Restaurant.ViewModels
             set { if (_isSelected != value) { _isSelected = value; OnPropertyChanged(); } }
         }
 
-        private decimal _cantitateInMeniu = 1m; // Implicit 1
+        private decimal _cantitateInMeniu = 1m; 
         public decimal CantitateInMeniu
         {
             get => _cantitateInMeniu;

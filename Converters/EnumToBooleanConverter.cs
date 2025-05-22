@@ -1,7 +1,6 @@
-﻿// În Restaurant.Converters.EnumToBooleanConverter.cs
-using System;
+﻿using System;
 using System.Globalization;
-using System.Windows; // Necesar pentru DependencyProperty.UnsetValue
+using System.Windows; 
 using System.Windows.Data;
 
 namespace Restaurant.Converters
@@ -21,14 +20,14 @@ namespace Restaurant.Converters
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null || parameter == null || targetType == null)
-                return DependencyProperty.UnsetValue; // Folosește UnsetValue pentru a indica eșecul conversiei
+                return DependencyProperty.UnsetValue; 
 
             bool boolValue;
             if (value is bool)
             {
                 boolValue = (bool)value;
             }
-            else if (value is bool?) // Gestionează și bool?
+            else if (value is bool?) 
             {
                 boolValue = ((bool?)value) ?? false;
             }
@@ -39,20 +38,12 @@ namespace Restaurant.Converters
 
             if (!boolValue)
             {
-                // Pentru RadioButton, deselectarea unuia nu selectează automat altul prin ConvertBack dacă toate sunt false.
-                // Adesea, ConvertBack nu este critic pentru RadioButton-uri legate la un enum,
-                // deoarece selecția unuia declanșează schimbarea valorii enum-ului în ViewModel,
-                // care apoi actualizează toate RadioButton-urile prin Convert.
-                // Dacă totuși ai nevoie să gestionezi un caz specific la "false",
-                // poți returna DependencyProperty.UnsetValue sau valoarea curentă a enum-ului.
-                // Pentru simplitate aici, vom returna parametrul (valoarea enum-ului) dacă e true.
                 return DependencyProperty.UnsetValue;
             }
 
             try
             {
-                // Asigură-te că targetType este tipul enum-ului
-                return Enum.Parse(targetType, parameter.ToString(), true); // true pentru ignore case
+                return Enum.Parse(targetType, parameter.ToString(), true); 
             }
             catch
             {

@@ -1,10 +1,9 @@
-﻿// În Restaurant.ViewModels.MeniuViewModel.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using RestaurantComenzi.Models; // Asigură-te că namespace-ul este corect
+using RestaurantComenzi.Models; 
 
 namespace Restaurant.ViewModels
 {
@@ -15,13 +14,13 @@ namespace Restaurant.ViewModels
         public int Id => Entity.MeniuID;
         public string Name => Entity.Denumire;
 
-        public string? ImagePath // Am actualizat și ImagePath pentru Meniu
+        public string? ImagePath 
         {
             get
             {
                 if (string.IsNullOrWhiteSpace(Entity.ListaFotografii))
                 {
-                    return "/Images/default-menu.png"; // Un placeholder specific pentru meniuri
+                    return "/Images/default-menu.png"; 
                 }
                 return Entity.ListaFotografii.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
                                              .FirstOrDefault() ?? "/Images/default-menu.png";
@@ -53,14 +52,12 @@ namespace Restaurant.ViewModels
                 }
                 return Entity.MeniuPreparate.All(mp =>
                     mp.Preparat != null &&
-                    mp.Preparat.CantitatePortie > 0 && // Gramajul porției preparatului e valid
-                                                       // Stocul total al preparatului component trebuie să acopere gramajul necesar pentru acest meniu
+                    mp.Preparat.CantitatePortie > 0 && 
                     mp.Preparat.CantitateTotala >= (mp.Cantitate * mp.Preparat.CantitatePortie)
                 );
             }
         }
 
-        // Lista denumirilor preparatelor din meniu (existentă)
         public List<string> Items
         {
             get
@@ -73,23 +70,20 @@ namespace Restaurant.ViewModels
             }
         }
 
-        // NOU: Proprietate pentru lista unică de alergeni ai meniului (din toate preparatele componente)
         public List<string> Allergens
         {
             get
             {
-                var allMenuAllergens = new HashSet<string>(); // Folosim HashSet pentru a obține alergeni unici
+                var allMenuAllergens = new HashSet<string>(); 
 
                 if (Entity.MeniuPreparate != null)
                 {
                     foreach (var meniuPreparat in Entity.MeniuPreparate)
                     {
-                        // Verificăm dacă preparatul și lista sa de alergeni nu sunt null
                         if (meniuPreparat.Preparat?.AlergeniPreparate != null)
                         {
                             foreach (var alergenPreparat in meniuPreparat.Preparat.AlergeniPreparate)
                             {
-                                // Verificăm dacă alergenul în sine și denumirea sa nu sunt null/goale
                                 if (alergenPreparat.Alergen != null && !string.IsNullOrWhiteSpace(alergenPreparat.Alergen.Denumire))
                                 {
                                     allMenuAllergens.Add(alergenPreparat.Alergen.Denumire);
@@ -98,14 +92,12 @@ namespace Restaurant.ViewModels
                         }
                     }
                 }
-                return allMenuAllergens.ToList(); // Convertim HashSet-ul înapoi în Listă
+                return allMenuAllergens.ToList(); 
             }
         }
 
-        // NOU: Proprietate pentru a verifica dacă meniul are alergeni
         public bool HasAllergens => Allergens != null && Allergens.Any();
 
-        // NOU: Proprietate pentru textul formatat al alergenilor meniului
         public string AllergensDisplayString
         {
             get
@@ -121,12 +113,6 @@ namespace Restaurant.ViewModels
         public MeniuViewModel(Meniu meniu)
         {
             Entity = meniu ?? throw new ArgumentNullException(nameof(meniu));
-            // IMPORTANT: Asigură-te că la încărcarea 'Meniu' din DB, ai inclus:
-            // .Include(m => m.MeniuPreparate)
-            //     .ThenInclude(mp => mp.Preparat)
-            //         .ThenInclude(p => p.AlergeniPreparate)
-            //             .ThenInclude(ap => ap.Alergen)
-            // Altfel, 'Allergens' va fi goală.
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

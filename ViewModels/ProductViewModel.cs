@@ -1,5 +1,4 @@
-﻿// În Restaurant.ViewModels.ProductViewModel.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -17,19 +16,17 @@ namespace Restaurant.ViewModels
         public decimal Price => Entity.Pret;
         public string ImagePath { get; private set; }
 
-        // Afișează gramajul porției formatat
-        public string DisplayPortionSize => $"{Entity.CantitatePortie}g"; // Sau altă unitate dacă e cazul
+        public string DisplayPortionSize => $"{Entity.CantitatePortie}g"; 
 
         public List<string> Allergens =>
             Entity.AlergeniPreparate?
                   .Where(ap => ap.Alergen != null)
                   .Select(ap => ap.Alergen.Denumire)
                   .ToList()
-                ?? new List<string>(); // Folosește ?? pentru a returna listă goală dacă AlergeniPreparate e null
+                ?? new List<string>(); 
 
         public bool HasAllergens => Allergens.Any();
 
-        // IsAvailable verifică dacă stocul în grame este suficient pentru cel puțin o porție
         public bool IsAvailable => Entity.CantitateTotala >= Entity.CantitatePortie && Entity.CantitatePortie > 0;
 
         public string AllergensDisplayString

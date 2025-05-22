@@ -58,7 +58,6 @@ namespace Restaurant.ViewModels
 
         private void OnRegister(object parameter)
         {
-            // Mapare ViewModel → entitate
             var cont = new ContUtilizator
             {
                 Nume = this.Nume,

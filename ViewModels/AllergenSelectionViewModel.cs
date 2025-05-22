@@ -1,5 +1,4 @@
-﻿// În Restaurant.ViewModels.AllergenSelectionViewModel.cs (sau în același fișier cu ProductFormViewModel)
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace Restaurant.ViewModels

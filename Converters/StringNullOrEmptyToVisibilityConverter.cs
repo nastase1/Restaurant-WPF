@@ -7,8 +7,6 @@ namespace Restaurant.Converters
 {
     public class StringNullOrEmptyToVisibilityConverter : IValueConverter
     {
-        // dacă string-ul este null sau gol → Visible (afişează placeholder)
-        // în cazul în care vrei invert, foloseşte ConverterParameter="Invert"
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             bool invert = (parameter as string) == "Invert";

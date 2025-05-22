@@ -1,5 +1,4 @@
-﻿// În Restaurant.Converters.BoolToVisibilityConverter.cs
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -16,13 +15,11 @@ namespace Restaurant.Converters
             {
                 bValue = boolVal;
             }
-            else if (value is int intVal) // Adaugă această verificare
+            else if (value is int intVal) 
             {
-                bValue = (intVal != 0); // Consideră 0 ca fals, orice altceva ca adevărat
+                bValue = (intVal != 0); 
             }
-            // Poți adăuga și alte tipuri dacă este necesar
 
-            // Logica de inversare (dacă parametrul este "Invert" sau similar)
             bool invert = parameter as string == "Invert";
             if (invert)
             {
@@ -34,7 +31,6 @@ namespace Restaurant.Converters
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            // De obicei, nu este necesar pentru Visibility
             if (value is Visibility visibility)
             {
                 bool invert = parameter as string == "Invert";

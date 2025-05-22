@@ -1,5 +1,4 @@
-﻿// În Restaurant.ViewModels.EmployeeDashboardViewModel.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -10,13 +9,12 @@ using System.Windows;
 using System.Windows.Input;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration; // Pentru citirea appsettings.json
+using Microsoft.Extensions.Configuration; 
 using Microsoft.Extensions.DependencyInjection;
-using Restaurant.Service; // Pentru RelayCommand
+using Restaurant.Service; 
 using Restaurant.View;
 using RestaurantComenzi.Data;
 using RestaurantComenzi.Models;
-//using Restaurant.View; // Pentru deschiderea ferestrelor de editare (mai târziu)
 
 namespace Restaurant.ViewModels
 {
@@ -24,15 +22,15 @@ namespace Restaurant.ViewModels
     public enum CrudPopupOperationType
     {
         None,
-        AddCategory, EditCategory, // Vom implementa și Edit simplu
-        AddAllergen, EditAllergen, // Vom implementa și Edit simplu
+        AddCategory, EditCategory, 
+        AddAllergen, EditAllergen, 
         AddProduct, EditProduct,
         AddMenu, EditMenu
     }
 
     public class ScalarIntResult
     {
-        public decimal Value { get; set; } // Lăsăm decimal pentru compatibilitate cu SCOPE_IDENTITY()
+        public decimal Value { get; set; } 
     }
 
     public class EmployeeDashboardViewModel : INotifyPropertyChanged
@@ -56,9 +54,9 @@ namespace Restaurant.ViewModels
         private Categorie _selectedCategorie;
         public Categorie SelectedCategorie { get => _selectedCategorie; set { _selectedCategorie = value; OnPropertyChanged(); (DeleteCategoryCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
         private Preparat _selectedPreparat;
-        public Preparat SelectedPreparat { get => _selectedPreparat; set { _selectedPreparat = value; OnPropertyChanged(); (DeleteProductCommand as RelayCommand)?.RaiseCanExecuteChanged(); /* TODO: Și EditProductCommand */ } }
+        public Preparat SelectedPreparat { get => _selectedPreparat; set { _selectedPreparat = value; OnPropertyChanged(); (DeleteProductCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
         private Meniu _selectedMeniu;
-        public Meniu SelectedMeniu { get => _selectedMeniu; set { _selectedMeniu = value; OnPropertyChanged(); (DeleteMenuCommand as RelayCommand)?.RaiseCanExecuteChanged(); /* TODO: Și EditMenuCommand */ } }
+        public Meniu SelectedMeniu { get => _selectedMeniu; set { _selectedMeniu = value; OnPropertyChanged(); (DeleteMenuCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
         private Alergen _selectedAlergen;
         public Alergen SelectedAlergen { get => _selectedAlergen; set { _selectedAlergen = value; OnPropertyChanged(); (DeleteAllergenCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
         private OrderDisplayViewModel _selectedComanda;
@@ -79,12 +77,12 @@ namespace Restaurant.ViewModels
         private string _simpleEntryName;
         public string SimpleEntryName { get => _simpleEntryName; set { _simpleEntryName = value; OnPropertyChanged(); (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
 
-        private Preparat _editingPreparat = new Preparat(); // Inițializează pentru a evita null la binding
+        private Preparat _editingPreparat = new Preparat(); 
         public Preparat EditingPreparat { get => _editingPreparat; set { _editingPreparat = value; OnPropertyChanged(); (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
         public ObservableCollection<Categorie> AllCategoriesForForms { get; } = new ObservableCollection<Categorie>();
         public ObservableCollection<AllergenSelectionViewModel> AllergensForProductForm { get; } = new ObservableCollection<AllergenSelectionViewModel>();
 
-        private Meniu _editingMeniu = new Meniu(); // Inițializează
+        private Meniu _editingMeniu = new Meniu(); 
         public Meniu EditingMeniu { get => _editingMeniu; set { _editingMeniu = value; OnPropertyChanged(); (SaveCrudItemCommand as RelayCommand)?.RaiseCanExecuteChanged(); } }
         public ObservableCollection<PreparatSelectionViewModel> PreparateForMenuForm { get; } = new ObservableCollection<PreparatSelectionViewModel>();
 
@@ -167,8 +165,8 @@ namespace Restaurant.ViewModels
         private void ClearEditingState()
         {
             SimpleEntryName = string.Empty;
-            EditingPreparat = new Preparat(); // Resetează la o instanță nouă
-            EditingMeniu = new Meniu();       // Resetează la o instanță nouă
+            EditingPreparat = new Preparat(); 
+            EditingMeniu = new Meniu();       
             AllCategoriesForForms.Clear();
             AllergensForProductForm.Clear();
             PreparateForMenuForm.Clear();
@@ -176,7 +174,7 @@ namespace Restaurant.ViewModels
 
         private void PrepareSimplePopup(string title, CrudPopupOperationType operation, string currentName = "")
         {
-            ClearEditingState(); // Asigură-te că alte formulare sunt goale
+            ClearEditingState(); 
             CurrentPopupOperation = operation;
             PopupTitle = title;
             SimpleEntryName = currentName;
@@ -201,8 +199,7 @@ namespace Restaurant.ViewModels
 
         private async Task PopulateProductFormCollections(Preparat forPreparat = null)
         {
-            // Încarcă categorii dacă nu sunt deja încărcate
-            if (!AllCategoriesForForms.Any() || AllCategoriesForForms.Count != Categorii.Count) // Simplă verificare, poate fi îmbunătățită
+            if (!AllCategoriesForForms.Any() || AllCategoriesForForms.Count != Categorii.Count) 
             {
                 var categories = await _db.Categorii.OrderBy(c => c.Denumire).ToListAsync();
                 Application.Current.Dispatcher.Invoke(() => {
@@ -214,10 +211,8 @@ namespace Restaurant.ViewModels
             var allAlergensDb = await _db.Alergeni.OrderBy(a => a.Denumire).ToListAsync();
             var selectedAllergenIds = new HashSet<int>();
 
-            if (forPreparat?.PreparatID > 0) // Dacă este în modul editare și preparatul are alergeni
+            if (forPreparat?.PreparatID > 0) 
             {
-                // Asigură-te că AlergeniPreparate sunt încărcate pentru 'forPreparat'
-                // Acest lucru ar trebui făcut la încărcarea 'SelectedPreparat' înainte de a deschide popup-ul de editare
                 var preparatWithAllergens = await _db.Preparate
                                 .Include(p => p.AlergeniPreparate)
                                 .FirstOrDefaultAsync(p => p.PreparatID == forPreparat.PreparatID);
@@ -241,13 +236,11 @@ namespace Restaurant.ViewModels
         {
             if (_db == null)
             {
-                // Afișează mesaj sau loghează dacă _db este null și nu suntem în design time
                 if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
                     MessageBox.Show("Conexiunea la baza de date nu este disponibilă pentru a încărca datele formularului de meniu.", "Eroare DB", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // Încarcă Categorii (dacă nu sunt deja încărcate pentru formulare)
             if (!AllCategoriesForForms.Any())
             {
                 var categories = await _db.Categorii.OrderBy(c => c.Denumire).ToListAsync();
@@ -257,16 +250,14 @@ namespace Restaurant.ViewModels
                 });
             }
 
-            // Încarcă toate Preparatele disponibile
             var allPreparateDb = await _db.Preparate.OrderBy(p => p.Denumire).ToListAsync();
-            var selectedPreparatData = new Dictionary<int, decimal>(); // PreparatID -> Cantitate
+            var selectedPreparatData = new Dictionary<int, decimal>(); 
 
-            if (forMeniu?.MeniuID > 0) // Dacă suntem în modul editare pentru un meniu existent
+            if (forMeniu?.MeniuID > 0) 
             {
-                // Reîncarcă meniul cu preparatele asociate pentru a avea datele corecte
                 var meniuWithItems = await _db.Meniuri
                                     .Include(m => m.MeniuPreparate)
-                                    .AsNoTracking() // Important pentru a evita conflicte de tracking
+                                    .AsNoTracking() 
                                     .FirstOrDefaultAsync(m => m.MeniuID == forMeniu.MeniuID);
 
                 if (meniuWithItems?.MeniuPreparate != null)
@@ -285,7 +276,7 @@ namespace Restaurant.ViewModels
                     PreparateForMenuForm.Add(new PreparatSelectionViewModel(preparat)
                     {
                         IsSelectedInMenu = selectedPreparatData.ContainsKey(preparat.PreparatID),
-                        CantitateInMeniu = selectedPreparatData.TryGetValue(preparat.PreparatID, out var cant) ? cant : 1m // Setează cantitatea dacă există, altfel 1
+                        CantitateInMeniu = selectedPreparatData.TryGetValue(preparat.PreparatID, out var cant) ? cant : 1m 
                     });
                 }
             });
@@ -296,7 +287,7 @@ namespace Restaurant.ViewModels
             ClearEditingState();
             CurrentPopupOperation = CrudPopupOperationType.AddProduct;
             PopupTitle = "Adaugă Preparat Nou";
-            EditingPreparat = new Preparat { CantitateTotala = 0, CantitatePortie = 0, Pret = 0 }; // Instanță nouă
+            EditingPreparat = new Preparat { CantitateTotala = 0, CantitatePortie = 0, Pret = 0 }; 
             if (EditingPreparat is INotifyPropertyChanged npcPrep)
             {
                 npcPrep.PropertyChanged += (_, __) =>
@@ -305,8 +296,8 @@ namespace Restaurant.ViewModels
             await PopulateProductFormCollections();
             if (AllCategoriesForForms.Any() && EditingPreparat.CategorieID == 0)
             {
-                // Setează o categorie implicită sau lasă utilizatorul să aleagă
-                EditingPreparat.Categorie = AllCategoriesForForms.First(); // Leagă obiectul, nu doar ID-ul
+                
+                EditingPreparat.Categorie = AllCategoriesForForms.First(); 
                 EditingPreparat.CategorieID = EditingPreparat.Categorie.CategorieID;
             }
             IsAddEditPopupOpen = true;
@@ -322,15 +313,13 @@ namespace Restaurant.ViewModels
             var preparatFromDb = await _db.Preparate
                                 .Include(p => p.Categorie)
                                 .Include(p => p.AlergeniPreparate)
-                                .AsNoTracking() // Important pentru editare
+                                .AsNoTracking() 
                                 .FirstOrDefaultAsync(p => p.PreparatID == SelectedPreparat.PreparatID);
 
             if (preparatFromDb == null) { MessageBox.Show("Preparatul nu a fost găsit."); return; }
-            EditingPreparat = preparatFromDb; // Lucrează pe o copie (AsNoTracking ajută) sau clonează manual
+            EditingPreparat = preparatFromDb; 
 
             await PopulateProductFormCollections(EditingPreparat);
-            // Categoria ar trebui să fie setată automat dacă SelectedItem din ComboBox este legat la EditingPreparat.Categorie
-            // și AvailableCategories este sursa.
             if (EditingPreparat.CategorieID > 0 && AllCategoriesForForms.Any())
             {
                 EditingPreparat.Categorie = AllCategoriesForForms.FirstOrDefault(c => c.CategorieID == EditingPreparat.CategorieID);
@@ -366,7 +355,7 @@ namespace Restaurant.ViewModels
             PopupTitle = "Modifică Meniu";
             EditingMeniu = await _db.Meniuri
                 .Include(m => m.Categorie)
-                .Include(m => m.MeniuPreparate) // Necesar pentru a pre-selecta
+                .Include(m => m.MeniuPreparate) 
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.MeniuID == SelectedMeniu.MeniuID);
             if (EditingMeniu == null) { MessageBox.Show("Meniul nu a fost găsit."); return; }
@@ -415,7 +404,6 @@ namespace Restaurant.ViewModels
             Func<Task> reloadSpecificDataAsync = null;
             bool isSimpleEntry = false;
 
-            // Asigură-te că _db este inițializat
             if (_db == null)
             {
                 MessageBox.Show("Eroare: Conexiunea la baza de date nu este disponibilă.", "Eroare Salvare");
@@ -476,10 +464,9 @@ namespace Restaurant.ViewModels
 
                         if (EditingPreparat.CategorieID == 0) { MessageBox.Show("Vă rugăm selectați o categorie pentru preparat.", "Validare"); return; }
 
-                        // CORECȚIE AICI: Asigură-te că toate elementele array-ului sunt SqlParameter
                         if (_currentPopupOperation == CrudPopupOperationType.AddProduct)
                         {
-                            SqlParameter[] productParamsInsert = { // Definire explicită a tipului array-ului
+                            SqlParameter[] productParamsInsert = { 
                         new SqlParameter("@Denumire", EditingPreparat.Denumire),
                         new SqlParameter("@Pret", EditingPreparat.Pret),
                         new SqlParameter("@CantitatePortie", EditingPreparat.CantitatePortie),
@@ -491,8 +478,8 @@ namespace Restaurant.ViewModels
                             if (prodResult.Any() && prodResult[0].Value > 0) EditingPreparat.PreparatID = (int)prodResult[0].Value; else throw new Exception($"Inserare {successMessageEntity.ToLower()} eșuată.");
                         }
                         else
-                        { // EditProduct
-                            SqlParameter[] productParamsUpdate = { // Definire explicită a tipului array-ului
+                        { 
+                            SqlParameter[] productParamsUpdate = { 
                         new SqlParameter("@PreparatID", EditingPreparat.PreparatID),
                         new SqlParameter("@Denumire", EditingPreparat.Denumire),
                         new SqlParameter("@Pret", EditingPreparat.Pret),
@@ -517,10 +504,9 @@ namespace Restaurant.ViewModels
 
                         if (EditingMeniu.CategorieID == 0) { MessageBox.Show("Vă rugăm selectați o categorie pentru meniu.", "Validare"); return; }
 
-                        // CORECȚIE AICI: Asigură-te că toate elementele array-ului sunt SqlParameter
                         if (_currentPopupOperation == CrudPopupOperationType.AddMenu)
                         {
-                            SqlParameter[] menuParamsInsert = { // Definire explicită
+                            SqlParameter[] menuParamsInsert = { 
                         new SqlParameter("@Denumire", EditingMeniu.Denumire),
                         new SqlParameter("@Descriere", (object)EditingMeniu.Descriere ?? DBNull.Value),
                         new SqlParameter("@CategorieID", EditingMeniu.CategorieID),
@@ -531,8 +517,8 @@ namespace Restaurant.ViewModels
                             if (menuResult.Any() && menuResult[0].Value > 0) EditingMeniu.MeniuID = (int)menuResult[0].Value; else throw new Exception($"Inserare {successMessageEntity.ToLower()} eșuată.");
                         }
                         else
-                        { // EditMenu
-                            SqlParameter[] menuParamsUpdate = { // Definire explicită
+                        { 
+                            SqlParameter[] menuParamsUpdate = { 
                         new SqlParameter("@MeniuID", EditingMeniu.MeniuID),
                         new SqlParameter("@Denumire", EditingMeniu.Denumire),
                         new SqlParameter("@Descriere", (object)EditingMeniu.Descriere ?? DBNull.Value),
@@ -566,7 +552,7 @@ namespace Restaurant.ViewModels
             finally
             {
                 ClearEditingState();
-                _currentPopupOperation = CrudPopupOperationType.None; // Resetează după fiecare operațiune
+                _currentPopupOperation = CrudPopupOperationType.None; 
             }
         }
 
@@ -598,8 +584,8 @@ namespace Restaurant.ViewModels
 
             try
             {
-                string sql = $"EXEC {procedureName} @Denumire = @Denumire"; // SQL-ul folosește parametrul numit @Denumire
-                var result = await _db.Database.SqlQueryRaw<ScalarIntResult>(sql, nameParam).ToListAsync(); // Trecem string-ul SQL și obiectul SqlParameter
+                string sql = $"EXEC {procedureName} @Denumire = @Denumire"; 
+                var result = await _db.Database.SqlQueryRaw<ScalarIntResult>(sql, nameParam).ToListAsync(); 
 
                 if (result.Any() && result[0].Value > 0)
                 {
@@ -661,7 +647,7 @@ namespace Restaurant.ViewModels
             {
                 var idParam = new SqlParameter("@PreparatID", SelectedPreparat.PreparatID);
                 await _db.Database.ExecuteSqlRawAsync("EXEC dbo.DeletePreparat @PreparatID = {0}", idParam);
-                await LoadPreparateAsync(); // Reîncarcă lista de preparate
+                await LoadPreparateAsync(); 
             }
             catch (SqlException ex) { MessageBox.Show($"Eroare SQL: {(ex.Errors.Count > 0 ? ex.Errors[0].Message : ex.Message)}", "Eroare Ștergere"); }
             catch (Exception ex) { MessageBox.Show($"Eroare: {ex.Message}", "Eroare"); }
@@ -674,7 +660,7 @@ namespace Restaurant.ViewModels
             {
                 var idParam = new SqlParameter("@MeniuID", SelectedMeniu.MeniuID);
                 await _db.Database.ExecuteSqlRawAsync("EXEC dbo.DeleteMeniu @MeniuID = {0}", idParam);
-                await LoadMeniuriAsync(); // Reîncarcă lista de meniuri
+                await LoadMeniuriAsync(); 
             }
             catch (SqlException ex) { MessageBox.Show($"Eroare SQL: {(ex.Errors.Count > 0 ? ex.Errors[0].Message : ex.Message)}", "Eroare Ștergere"); }
             catch (Exception ex) { MessageBox.Show($"Eroare: {ex.Message}", "Eroare"); }
@@ -688,7 +674,7 @@ namespace Restaurant.ViewModels
                 if (window.DataContext == this && window is EmployeeDashboardWindow)
                 { currentDashboardWindow = window; break; }
             }
-            var loginWindow = new MainWindow(); // Folosește LoginWindow, nu MainWindow
+            var loginWindow = new MainWindow(); 
             if (Application.Current.MainWindow == currentDashboardWindow || Application.Current.MainWindow == null)
             { Application.Current.MainWindow = loginWindow; }
             loginWindow.Show();
@@ -713,8 +699,8 @@ namespace Restaurant.ViewModels
                 {
                     comandaInDb.Stare = NewOrderStatus;
                     await _db.SaveChangesAsync();
-                    SelectedComanda.Stare = NewOrderStatus; // Actualizează și în ViewModel
-                    OnPropertyChanged(nameof(ComenziActive)); // Forțează re-evaluarea listei de comenzi active
+                    SelectedComanda.Stare = NewOrderStatus; 
+                    OnPropertyChanged(nameof(ComenziActive)); 
                     MessageBox.Show($"Starea comenzii {SelectedComanda.CodComanda} a fost schimbată în '{NewOrderStatus}'.", "Succes", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
@@ -726,8 +712,6 @@ namespace Restaurant.ViewModels
 
         private void UpdateAvailableOrderStates()
         {
-            // Logica pentru a popula un ComboBox cu stările posibile, dacă este necesar,
-            // sau pentru a valida NewOrderStatus. Momentan, AvailableOrderStates este fix.
             (ChangeOrderStatusCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
@@ -740,7 +724,7 @@ namespace Restaurant.ViewModels
             if (_db == null) return;
             var data = await _db.Meniuri
                 .Include(m => m.Categorie)
-                .Include(m => m.MeniuPreparate).ThenInclude(mp => mp.Preparat) // Necesar pentru detalii meniu
+                .Include(m => m.MeniuPreparate).ThenInclude(mp => mp.Preparat) 
                 .OrderBy(m => m.Denumire).ToListAsync();
             Application.Current.Dispatcher.Invoke(() => { Meniuri.Clear(); foreach (var item in data) Meniuri.Add(item); });
         }
